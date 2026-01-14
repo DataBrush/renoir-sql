@@ -1,6 +1,3 @@
-use proc_macro::TokenStream;
+pub mod parser;
 
-#[proc_macro]
-pub fn sql(_input: TokenStream) -> TokenStream {
-    return "todo!(\"Renoir SQL macro not yet implemented\");".parse().unwrap();
-}
+pub use parser::{parse_sql, ParseError};

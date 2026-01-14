@@ -1,31 +1,49 @@
 use crate::*;
 use std::sync::Arc;
 
-/// Builder for constructing IrPlan using a fluent API
+/// Builder for constructing streaming programs
+pub struct ProgramBuilder {
+    program: Program,
+}
+
+impl ProgramBuilder {
+    pub fn new() -> Self {
+        Self {
+            program: Program::new(),
+        }
+    }
+
+    pub fn add_source(mut self, source: SourceDef) -> Self {
+        self.program.add_source(source);
+        self
+    }
+
+    pub fn add_sink(mut self, sink: SinkDef) -> Self {
+        self.program.add_sink(sink);
+        self
+    }
+
+    pub fn add_pipeline(mut self, pipeline: Pipeline) -> Self {
+        self.program.add_pipeline(pipeline);
+        self
+    }
+
+    pub fn build(self) -> Program {
+        self.program
+    }
+}
+
+/// Builder for constructing IrPlan (streaming operations)
 pub struct IrPlanBuilder {
     plan: Arc<IrPlan>,
 }
 
 impl IrPlanBuilder {
-    /// Start building from a table source
-    pub fn table(table_name: impl Into<String>) -> Self {
+    /// Start building from a source reference
+    pub fn source(source_name: impl Into<String>, alias: Option<String>) -> Self {
         Self {
-            plan: Arc::new(IrPlan::Table {
-                table_name: table_name.into(),
-            }),
-        }
-    }
-
-    /// Start building from a scan operation
-    pub fn scan(
-        input: Arc<IrPlan>,
-        stream_name: impl Into<String>,
-        alias: Option<String>,
-    ) -> Self {
-        Self {
-            plan: Arc::new(IrPlan::Scan {
-                input,
-                stream_name: stream_name.into(),
+            plan: Arc::new(IrPlan::Source {
+                source_name: source_name.into(),
                 alias,
             }),
         }
@@ -41,24 +59,39 @@ impl IrPlanBuilder {
         }
     }
 
-    /// Add a projection operation to the plan
-    pub fn project(self, columns: Vec<ProjectionColumn>, distinct: bool) -> Self {
+    /// Add a map operation to the plan
+    pub fn map(self, projections: Vec<ProjectionColumn>) -> Self {
         Self {
-            plan: Arc::new(IrPlan::Project {
+            plan: Arc::new(IrPlan::Map {
                 input: self.plan,
-                columns,
-                distinct,
+                projections,
+            }),
+        }
+    }
+
+    /// Add a flat_map operation to the plan
+    pub fn flat_map(self, projection: ProjectionColumn) -> Self {
+        Self {
+            plan: Arc::new(IrPlan::FlatMap {
+                input: self.plan,
+                projection,
             }),
         }
     }
 
     /// Add a group by operation to the plan
-    pub fn group_by(self, keys: Vec<ColumnRef>, group_condition: Option<GroupClause>) -> Self {
+    pub fn group_by(
+        self,
+        keys: Vec<ColumnRef>,
+        aggregations: Vec<ProjectionColumn>,
+        having: Option<GroupClause>,
+    ) -> Self {
         Self {
             plan: Arc::new(IrPlan::GroupBy {
                 input: self.plan,
                 keys,
-                group_condition,
+                aggregations,
+                having,
             }),
         }
     }
@@ -98,6 +131,13 @@ impl IrPlanBuilder {
                 limit,
                 offset,
             }),
+        }
+    }
+
+    /// Add a distinct operation to the plan
+    pub fn distinct(self) -> Self {
+        Self {
+            plan: Arc::new(IrPlan::Distinct { input: self.plan }),
         }
     }
 
@@ -516,54 +556,112 @@ impl JoinConditionBuilder {
     }
 }
 
+/// Builder for constructing SourceDef
+pub struct SourceDefBuilder;
+
+impl SourceDefBuilder {
+    pub fn new(
+        name: impl Into<String>,
+        schema: Vec<FieldDef>,
+        connector_type: impl Into<String>,
+        options: Vec<ConnectorOption>,
+    ) -> SourceDef {
+        SourceDef {
+            name: name.into(),
+            schema,
+            connector: ConnectorConfig {
+                connector_type: connector_type.into(),
+                options,
+            },
+        }
+    }
+}
+
+/// Builder for constructing SinkDef
+pub struct SinkDefBuilder;
+
+impl SinkDefBuilder {
+    pub fn new(
+        name: impl Into<String>,
+        schema: Vec<FieldDef>,
+        connector_type: impl Into<String>,
+        options: Vec<ConnectorOption>,
+    ) -> SinkDef {
+        SinkDef {
+            name: name.into(),
+            schema,
+            connector: ConnectorConfig {
+                connector_type: connector_type.into(),
+                options,
+            },
+        }
+    }
+}
+
+/// Builder for constructing Pipeline
+pub struct PipelineBuilder;
+
+impl PipelineBuilder {
+    pub fn new(
+        sink_name: impl Into<String>,
+        sink_columns: Vec<String>,
+        plan: Arc<IrPlan>,
+    ) -> Pipeline {
+        Pipeline {
+            sink_name: sink_name.into(),
+            sink_columns,
+            plan,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn test_simple_table_plan() {
-        let plan = IrPlanBuilder::table("users").build();
-        assert!(matches!(plan.as_ref(), IrPlan::Table { .. }));
+    fn test_simple_source_plan() {
+        let plan = IrPlanBuilder::source("users", None).build();
+        assert!(matches!(plan.as_ref(), IrPlan::Source { .. }));
     }
 
     #[test]
-    fn test_table_with_filter() {
+    fn test_source_with_filter() {
         let filter = FilterBuilder::comparison(
             ComplexFieldBuilder::column(ColumnRefBuilder::column("age")),
             ComparisonOp::GreaterThan,
             ComplexFieldBuilder::int(18),
         );
 
-        let plan = IrPlanBuilder::table("users").filter(filter).build();
+        let plan = IrPlanBuilder::source("users", None).filter(filter).build();
 
         assert!(matches!(plan.as_ref(), IrPlan::Filter { .. }));
     }
 
     #[test]
-    fn test_table_with_projection() {
-        let columns = vec![
+    fn test_source_with_map() {
+        let projections = vec![
             ProjectionBuilder::column(ColumnRefBuilder::column("name"), None),
             ProjectionBuilder::column(ColumnRefBuilder::column("email"), Some("user_email".to_string())),
         ];
 
-        let plan = IrPlanBuilder::table("users")
-            .project(columns, false)
+        let plan = IrPlanBuilder::source("users", None)
+            .map(projections)
             .build();
 
-        assert!(matches!(plan.as_ref(), IrPlan::Project { .. }));
+        assert!(matches!(plan.as_ref(), IrPlan::Map { .. }));
     }
 
     #[test]
     fn test_complex_plan_with_join() {
-        let left_plan = IrPlanBuilder::table("users").build();
-        let right_plan = IrPlanBuilder::table("orders").build();
+        let right_plan = IrPlanBuilder::source("orders", None).build();
 
         let join_condition = vec![JoinConditionBuilder::new(
             ColumnRefBuilder::with_table("users", "id"),
             ColumnRefBuilder::with_table("orders", "user_id"),
         )];
 
-        let plan = IrPlanBuilder::table("users")
+        let plan = IrPlanBuilder::source("users", None)
             .join(right_plan, join_condition, JoinType::Inner)
             .build();
 
@@ -571,8 +669,8 @@ mod tests {
     }
 
     #[test]
-    fn test_aggregate_projection() {
-        let columns = vec![
+    fn test_aggregate_with_group_by() {
+        let aggregations = vec![
             ProjectionBuilder::column(ColumnRefBuilder::column("country"), None),
             ProjectionBuilder::aggregate(
                 AggregateFunctionBuilder::count(ColumnRefBuilder::column("id")),
@@ -580,24 +678,32 @@ mod tests {
             ),
         ];
 
-        let plan = IrPlanBuilder::table("users")
-            .group_by(vec![ColumnRefBuilder::column("country")], None)
-            .project(columns, false)
+        let plan = IrPlanBuilder::source("users", None)
+            .group_by(vec![ColumnRefBuilder::column("country")], aggregations, None)
             .build();
 
-        assert!(matches!(plan.as_ref(), IrPlan::Project { .. }));
+        assert!(matches!(plan.as_ref(), IrPlan::GroupBy { .. }));
     }
 
     #[test]
     fn test_order_and_limit() {
         let order_items = vec![OrderByBuilder::desc(ColumnRefBuilder::column("created_at"))];
 
-        let plan = IrPlanBuilder::table("users")
+        let plan = IrPlanBuilder::source("users", None)
             .order_by(order_items)
             .limit(10, Some(5))
             .build();
 
         assert!(matches!(plan.as_ref(), IrPlan::Limit { .. }));
+    }
+
+    #[test]
+    fn test_distinct() {
+        let plan = IrPlanBuilder::source("users", None)
+            .distinct()
+            .build();
+
+        assert!(matches!(plan.as_ref(), IrPlan::Distinct { .. }));
     }
 
     #[test]
@@ -616,8 +722,66 @@ mod tests {
 
         let combined_filter = FilterBuilder::and(age_filter, status_filter);
 
-        let plan = IrPlanBuilder::table("users").filter(combined_filter).build();
+        let plan = IrPlanBuilder::source("users", None).filter(combined_filter).build();
 
         assert!(matches!(plan.as_ref(), IrPlan::Filter { .. }));
+    }
+
+    #[test]
+    fn test_program_with_sources_and_pipelines() {
+        let source = SourceDefBuilder::new(
+            "sales",
+            vec![
+                FieldDef {
+                    name: "product_id".to_string(),
+                    data_type: DataType::BigInt,
+                },
+                FieldDef {
+                    name: "quantity".to_string(),
+                    data_type: DataType::Integer,
+                },
+            ],
+            "csv",
+            vec![ConnectorOption {
+                key: "path".to_string(),
+                value: OptionValue::String("data/sales.csv".to_string()),
+            }],
+        );
+
+        let sink = SinkDefBuilder::new(
+            "filtered_sales",
+            vec![
+                FieldDef {
+                    name: "product_id".to_string(),
+                    data_type: DataType::BigInt,
+                },
+            ],
+            "csv",
+            vec![],
+        );
+
+        let plan = IrPlanBuilder::source("sales", None)
+            .filter(FilterBuilder::comparison(
+                ComplexFieldBuilder::column(ColumnRefBuilder::column("quantity")),
+                ComparisonOp::GreaterThan,
+                ComplexFieldBuilder::int(10),
+            ))
+            .build();
+
+        let pipeline = PipelineBuilder::new(
+            "filtered_sales",
+            vec!["product_id".to_string()],
+            plan,
+        );
+
+        let program = ProgramBuilder::new()
+            .add_source(source)
+            .add_sink(sink)
+            .add_pipeline(pipeline)
+            .build();
+
+        assert_eq!(program.sources.len(), 1);
+        assert_eq!(program.sinks.len(), 1);
+        assert_eq!(program.pipelines.len(), 1);
     }
 }

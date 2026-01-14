@@ -232,6 +232,11 @@ version = "0.1.0"
 [[package]]
 name = "renoir-sql"
 version = "0.1.0"
+dependencies = [
+ "pest",
+ "pest_derive",
+ "renoir-ir",
+]
 
 [[package]]
 name = "renoir-sql-origin"

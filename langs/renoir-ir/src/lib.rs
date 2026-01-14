@@ -3,12 +3,51 @@ use std::sync::Arc;
 
 pub mod builder;
 
+/// Complete program with source/sink definitions and streaming pipelines
+#[derive(Debug, Clone, PartialEq)]
+pub struct Program {
+    pub sources: Vec<SourceDef>,
+    pub sinks: Vec<SinkDef>,
+    pub pipelines: Vec<Pipeline>,
+}
+
+/// Definition of a data source (e.g., Kafka, CSV, etc.)
+#[derive(Debug, Clone, PartialEq)]
+pub struct SourceDef {
+    pub name: String,
+    pub schema: Vec<FieldDef>,
+    pub connector: ConnectorConfig,
+}
+
+/// Definition of a data sink (e.g., CSV, database, etc.)
+#[derive(Debug, Clone, PartialEq)]
+pub struct SinkDef {
+    pub name: String,
+    pub schema: Vec<FieldDef>,
+    pub connector: ConnectorConfig,
+}
+
+/// A streaming pipeline from source through transformations to sink
+#[derive(Debug, Clone, PartialEq)]
+pub struct Pipeline {
+    pub sink_name: String,
+    pub sink_columns: Vec<String>,
+    pub plan: Arc<IrPlan>,
+}
+
+/// Connector configuration for sources and sinks
+#[derive(Debug, Clone, PartialEq)]
+pub struct ConnectorConfig {
+    pub connector_type: String,  // e.g., "kafka", "csv", "postgres"
+    pub options: Vec<ConnectorOption>,
+}
+
+/// Streaming operations that form a dataflow pipeline
 #[derive(Debug, Clone, PartialEq)]
 pub enum IrPlan {
-    // Source operations
-    Scan {
-        input: Arc<IrPlan>,
-        stream_name: String,
+    // Source operation - references a defined source by name
+    Source {
+        source_name: String,
         alias: Option<String>,
     },
 
@@ -18,16 +57,21 @@ pub enum IrPlan {
         predicate: FilterClause,
     },
 
-    Project {
+    Map {
         input: Arc<IrPlan>,
-        columns: Vec<ProjectionColumn>,
-        distinct: bool,
+        projections: Vec<ProjectionColumn>,
+    },
+
+    FlatMap {
+        input: Arc<IrPlan>,
+        projection: ProjectionColumn,
     },
 
     GroupBy {
         input: Arc<IrPlan>,
         keys: Vec<ColumnRef>,
-        group_condition: Option<GroupClause>,
+        aggregations: Vec<ProjectionColumn>,
+        having: Option<GroupClause>,
     },
 
     Join {
@@ -47,12 +91,45 @@ pub enum IrPlan {
         limit: i64,
         offset: Option<i64>,
     },
-    Table {
-        table_name: String,
+
+    Distinct {
+        input: Arc<IrPlan>,
     },
 }
 
-// Supporting structures
+// Schema and connector definitions
+#[derive(Debug, Clone, PartialEq)]
+pub struct FieldDef {
+    pub name: String,
+    pub data_type: DataType,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum DataType {
+    Integer,    // i32
+    BigInt,     // i64
+    Float,      // f32
+    Double,     // f64
+    String,
+    Boolean,
+    Timestamp,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct ConnectorOption {
+    pub key: String,
+    pub value: OptionValue,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum OptionValue {
+    String(String),
+    Number(f64),
+    Boolean(bool),
+    Variable(String),
+}
+
+// Stream operation structures
 #[derive(Debug, PartialEq, Clone)]
 pub enum FilterClause {
     Base(FilterConditionType),
@@ -229,36 +306,31 @@ pub enum BinaryOp {
     Or,
 }
 
-// Implementation of helper methods for the new structure
+// Implementation of helper methods for streaming operations
 impl IrPlan {
-    // Convenience method to create a filter operation
     pub(crate) fn filter(input: Arc<IrPlan>, predicate: FilterClause) -> Self {
         IrPlan::Filter { input, predicate }
     }
 
-    // Convenience method to create a project operation
-    pub(crate) fn project(
-        input: Arc<IrPlan>,
-        columns: Vec<ProjectionColumn>,
-        distinct: bool,
-    ) -> Self {
-        IrPlan::Project {
-            input,
-            columns,
-            distinct,
-        }
+    pub(crate) fn map(input: Arc<IrPlan>, projections: Vec<ProjectionColumn>) -> Self {
+        IrPlan::Map { input, projections }
     }
 
-    // Similar convenience methods for other operations
+    pub(crate) fn flat_map(input: Arc<IrPlan>, projection: ProjectionColumn) -> Self {
+        IrPlan::FlatMap { input, projection }
+    }
+
     pub(crate) fn group_by(
         input: Arc<IrPlan>,
         keys: Vec<ColumnRef>,
-        group_condition: Option<GroupClause>,
+        aggregations: Vec<ProjectionColumn>,
+        having: Option<GroupClause>,
     ) -> Self {
         IrPlan::GroupBy {
             input,
             keys,
-            group_condition,
+            aggregations,
+            having,
         }
     }
 
@@ -272,6 +344,32 @@ impl IrPlan {
             limit,
             offset,
         }
+    }
+
+    pub(crate) fn distinct(input: Arc<IrPlan>) -> Self {
+        IrPlan::Distinct { input }
+    }
+}
+
+impl Program {
+    pub fn new() -> Self {
+        Program {
+            sources: Vec::new(),
+            sinks: Vec::new(),
+            pipelines: Vec::new(),
+        }
+    }
+
+    pub fn add_source(&mut self, source: SourceDef) {
+        self.sources.push(source);
+    }
+
+    pub fn add_sink(&mut self, sink: SinkDef) {
+        self.sinks.push(sink);
+    }
+
+    pub fn add_pipeline(&mut self, pipeline: Pipeline) {
+        self.pipelines.push(pipeline);
     }
 }
 
@@ -429,56 +527,82 @@ mod tests {
     }
 
     #[test]
-    fn test_ir_plan_table() {
-        let plan = IrPlan::Table {
-            table_name: "users".to_string(),
+    fn test_ir_plan_source() {
+        let plan = IrPlan::Source {
+            source_name: "users".to_string(),
+            alias: None,
         };
-        assert!(matches!(plan, IrPlan::Table { .. }));
+        assert!(matches!(plan, IrPlan::Source { .. }));
+    }
+
+    #[test]
+    fn test_program_structure() {
+        let mut program = Program::new();
+        
+        let source = SourceDef {
+            name: "sales".to_string(),
+            schema: vec![FieldDef {
+                name: "id".to_string(),
+                data_type: DataType::BigInt,
+            }],
+            connector: ConnectorConfig {
+                connector_type: "csv".to_string(),
+                options: vec![],
+            },
+        };
+        
+        program.add_source(source);
+        assert_eq!(program.sources.len(), 1);
     }
 
     #[test]
     fn test_ir_plan_filter() {
-        let table = Arc::new(IrPlan::Table {
-            table_name: "users".to_string(),
+        let source = Arc::new(IrPlan::Source {
+            source_name: "users".to_string(),
+            alias: None,
         });
         let predicate = FilterClause::Base(FilterConditionType::Boolean(true));
-        let plan = IrPlan::filter(table, predicate);
+        let plan = IrPlan::filter(source, predicate);
         assert!(matches!(plan, IrPlan::Filter { .. }));
     }
 
     #[test]
-    fn test_ir_plan_project() {
-        let table = Arc::new(IrPlan::Table {
-            table_name: "users".to_string(),
+    fn test_ir_plan_map() {
+        let source = Arc::new(IrPlan::Source {
+            source_name: "users".to_string(),
+            alias: None,
         });
-        let columns = vec![ProjectionColumn::Column(
+        let projections = vec![ProjectionColumn::Column(
             ColumnRef {
                 table: None,
                 column: "name".to_string(),
             },
             None,
         )];
-        let plan = IrPlan::project(table, columns, false);
-        assert!(matches!(plan, IrPlan::Project { .. }));
+        let plan = IrPlan::map(source, projections);
+        assert!(matches!(plan, IrPlan::Map { .. }));
     }
 
     #[test]
     fn test_ir_plan_group_by() {
-        let table = Arc::new(IrPlan::Table {
-            table_name: "orders".to_string(),
+        let source = Arc::new(IrPlan::Source {
+            source_name: "orders".to_string(),
+            alias: None,
         });
         let keys = vec![ColumnRef {
             table: None,
             column: "customer_id".to_string(),
         }];
-        let plan = IrPlan::group_by(table, keys, None);
+        let aggregations = vec![];
+        let plan = IrPlan::group_by(source, keys, aggregations, None);
         assert!(matches!(plan, IrPlan::GroupBy { .. }));
     }
 
     #[test]
     fn test_ir_plan_order_by() {
-        let table = Arc::new(IrPlan::Table {
-            table_name: "products".to_string(),
+        let source = Arc::new(IrPlan::Source {
+            source_name: "products".to_string(),
+            alias: None,
         });
         let items = vec![OrderByItem {
             column: ColumnRef {
@@ -488,21 +612,32 @@ mod tests {
             direction: OrderDirection::Desc,
             nulls_first: None,
         }];
-        let plan = IrPlan::order_by(table, items);
+        let plan = IrPlan::order_by(source, items);
         assert!(matches!(plan, IrPlan::OrderBy { .. }));
     }
 
     #[test]
     fn test_ir_plan_limit() {
-        let table = Arc::new(IrPlan::Table {
-            table_name: "users".to_string(),
+        let source = Arc::new(IrPlan::Source {
+            source_name: "users".to_string(),
+            alias: None,
         });
-        let plan = IrPlan::limit(table, 10, Some(5));
+        let plan = IrPlan::limit(source, 10, Some(5));
         assert!(matches!(plan, IrPlan::Limit { .. }));
         if let IrPlan::Limit { limit, offset, .. } = plan {
             assert_eq!(limit, 10);
             assert_eq!(offset, Some(5));
         }
+    }
+
+    #[test]
+    fn test_ir_plan_distinct() {
+        let source = Arc::new(IrPlan::Source {
+            source_name: "users".to_string(),
+            alias: None,
+        });
+        let plan = IrPlan::distinct(source);
+        assert!(matches!(plan, IrPlan::Distinct { .. }));
     }
 
     #[test]
@@ -537,11 +672,13 @@ mod tests {
 
     #[test]
     fn test_ir_plan_join() {
-        let left = Arc::new(IrPlan::Table {
-            table_name: "users".to_string(),
+        let left = Arc::new(IrPlan::Source {
+            source_name: "users".to_string(),
+            alias: None,
         });
-        let right = Arc::new(IrPlan::Table {
-            table_name: "orders".to_string(),
+        let right = Arc::new(IrPlan::Source {
+            source_name: "orders".to_string(),
+            alias: None,
         });
         let condition = vec![JoinCondition {
             left_col: ColumnRef {
@@ -610,8 +747,9 @@ mod tests {
 
     #[test]
     fn test_in_condition_subquery() {
-        let subquery = Arc::new(IrPlan::Table {
-            table_name: "active_users".to_string(),
+        let subquery = Arc::new(IrPlan::Source {
+            source_name: "active_users".to_string(),
+            alias: None,
         });
         let condition = InCondition::Subquery {
             field: ComplexField {
