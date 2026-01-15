@@ -6,3 +6,4 @@ edition = "2024"
 [dependencies]
 renoir-sql = { path = "../../langs/renoir-sql" }
 renoir = "0.5"
+serde = { version = "1.0.228", features = ["derive"] }

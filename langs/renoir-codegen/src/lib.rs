@@ -38,7 +38,7 @@ pub fn generate_program_with_context(program: &Program, ctx_name: &Ident) -> Tok
     let imports = generate_imports(&connector_types);
     let sources = generate_sources(&program.sources, ctx_name);
     let sinks = generate_sinks(&program.sinks);
-    let pipelines = generate_pipelines(&program.pipelines, ctx_name);
+    let pipelines = generate_pipelines(&program.pipelines, program, ctx_name);
 
     quote! {
         {
