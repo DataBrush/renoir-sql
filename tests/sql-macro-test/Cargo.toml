@@ -7,3 +7,4 @@ edition = "2024"
 renoir-sql = { path = "../../langs/renoir-sql" }
 renoir = "0.5"
 serde = { version = "1.0.228", features = ["derive"] }
+rdkafka = "0.38.0"

@@ -1,0 +1,12 @@
+[
+  {"transaction_id": 1, "product": "Laptop", "amount": 1200.00, "customer": "Alice", "region": "North"},
+  {"transaction_id": 2, "product": "Mouse", "amount": 25.00, "customer": "Bob", "region": "South"},
+  {"transaction_id": 3, "product": "Keyboard", "amount": 75.00, "customer": "Charlie", "region": "East"},
+  {"transaction_id": 4, "product": "Monitor", "amount": 350.00, "customer": "Diana", "region": "West"},
+  {"transaction_id": 5, "product": "Laptop", "amount": 1150.00, "customer": "Eve", "region": "North"},
+  {"transaction_id": 6, "product": "Mouse", "amount": 30.00, "customer": "Frank", "region": "South"},
+  {"transaction_id": 7, "product": "Desk", "amount": 450.00, "customer": "Grace", "region": "East"},
+  {"transaction_id": 8, "product": "Chair", "amount": 200.00, "customer": "Henry", "region": "West"},
+  {"transaction_id": 9, "product": "Laptop", "amount": 1300.00, "customer": "Ivy", "region": "North"},
+  {"transaction_id": 10, "product": "Monitor", "amount": 400.00, "customer": "Jack", "region": "South"}
+]
