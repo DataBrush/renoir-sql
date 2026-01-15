@@ -9,7 +9,7 @@ mod connectors;
 mod generation;
 mod utils;
 
-use analysis::{ConnectorScanner, DependencyGraph, SubqueryDetector};
+use analysis::{ConnectorScanner, DependencyGraph, SchemaTracker, SubqueryDetector, SubqueryInfo};
 use connectors::ConnectorRegistry;
 use generation::{
     generate_imports, generate_pipelines, generate_sinks, generate_sources,
