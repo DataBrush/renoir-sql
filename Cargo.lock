@@ -845,6 +845,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "renoir-dsl"
+version = "0.1.0"
+
+[[package]]
 name = "renoir-ir"
 version = "0.1.0"
 

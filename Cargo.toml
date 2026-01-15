@@ -4,5 +4,5 @@ members = ["langs/renoir-ir",
     "langs/renoir-sql",
     "langs/renoir-sql-origin",
     "langs/renoir-codegen",
-    "tests/sql-macro-test",
+    "tests/sql-macro-test", "langs/renoir-dsl",
 ]
