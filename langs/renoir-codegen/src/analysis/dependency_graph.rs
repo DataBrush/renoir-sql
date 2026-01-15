@@ -10,30 +10,39 @@ pub struct DependencyGraph {
 }
 
 impl DependencyGraph {
+    /// Create a new empty dependency graph
+    pub fn new() -> Self {
+        Self {
+            dependencies: HashMap::new(),
+            dependents: HashMap::new(),
+        }
+    }
+
+    /// Add a node to the graph
+    pub fn add_node(&mut self, node_id: usize, deps: HashSet<usize>) {
+        self.dependencies.insert(node_id, deps.clone());
+        
+        // Build reverse graph
+        for &dep_id in &deps {
+            self.dependents
+                .entry(dep_id)
+                .or_insert_with(HashSet::new)
+                .insert(node_id);
+        }
+        
+        // Ensure node exists in dependents map
+        self.dependents.entry(node_id).or_insert_with(HashSet::new);
+    }
+
     /// Build a dependency graph from detected subqueries
     pub fn build(subqueries: &[SubqueryInfo]) -> Self {
-        let mut dependencies = HashMap::new();
-        let mut dependents = HashMap::new();
-
+        let mut graph = Self::new();
+        
         for subquery in subqueries {
-            dependencies.insert(subquery.id, subquery.dependencies.clone());
-
-            // Build reverse graph
-            for &dep_id in &subquery.dependencies {
-                dependents
-                    .entry(dep_id)
-                    .or_insert_with(HashSet::new)
-                    .insert(subquery.id);
-            }
-
-            // Ensure all nodes exist in dependents map
-            dependents.entry(subquery.id).or_insert_with(HashSet::new);
+            graph.add_node(subquery.id, subquery.dependencies.clone());
         }
-
-        Self {
-            dependencies,
-            dependents,
-        }
+        
+        graph
     }
 
     /// Topologically sort subqueries to get execution order

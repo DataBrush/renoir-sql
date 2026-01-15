@@ -1,11 +1,13 @@
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use renoir_ir::{
-    BinaryOp, ComparisonOp, ComplexField, Condition, FilterClause, FilterConditionType,
-    IrLiteral, IrPlan, NullCondition, NullOp, ProjectionColumn,
+    AggregateFunction, AggregateType, BinaryOp, ColumnRef, ComparisonOp, ComplexField, Condition,
+    ExistsCondition, FilterClause, FilterConditionType, GroupClause, InCondition, IrLiteral,
+    IrPlan, JoinCondition, JoinType, NullCondition, NullOp, OrderByItem, OrderDirection,
+    ProjectionColumn,
 };
+use std::collections::HashMap;
 use std::sync::Arc;
-
 /// Generate code for an IR plan node
 /// This recursively generates the streaming pipeline code
 pub fn generate_ir_plan(plan: &Arc<IrPlan>, ctx_name: &syn::Ident) -> TokenStream {
@@ -82,10 +84,27 @@ pub fn generate_ir_plan(plan: &Arc<IrPlan>, ctx_name: &syn::Ident) -> TokenStrea
             }
         }
 
-        // Placeholder for other operations (Phase 3)
-        _ => {
+        IrPlan::Join {
+            left,
+            right,
+            condition,
+            join_type,
+        } => generate_join(left, right, condition, join_type, ctx_name),
+
+        IrPlan::GroupBy {
+            input,
+            keys,
+            aggregations,
+            having,
+        } => generate_group_by(input, keys, aggregations, having, ctx_name),
+
+        IrPlan::OrderBy { input, items } => generate_order_by(input, items, ctx_name),
+
+        IrPlan::FlatMap { input, projection } => {
+            let input_code = generate_ir_plan(input, ctx_name);
+            let projection_fn = generate_flat_map_projection(projection);
             quote! {
-                // TODO: Implement other plan nodes
+                #input_code.flat_map(#projection_fn)
             }
         }
     }
@@ -123,9 +142,8 @@ fn generate_base_condition(cond_type: &FilterConditionType) -> TokenStream {
         FilterConditionType::Boolean(val) => {
             quote! { |_item| #val }
         }
-        // Placeholders for IN and EXISTS (will be implemented in Phase 3 with subqueries)
-        FilterConditionType::In(_) => quote! { |_item| true },
-        FilterConditionType::Exists(_) => quote! { |_item| true },
+        FilterConditionType::In(in_cond) => generate_in_condition(in_cond),
+        FilterConditionType::Exists(exists_cond) => generate_exists_condition(exists_cond),
     }
 }
 
@@ -211,6 +229,22 @@ fn generate_map_projection(projections: &[ProjectionColumn]) -> TokenStream {
     }
 }
 
+fn generate_flat_map_projection(projection: &ProjectionColumn) -> TokenStream {
+    // FlatMap is used for operations that produce 0 or more results per input
+    // For now, implement a simple version that returns an iterator
+    match projection {
+        ProjectionColumn::Column(col_ref, _) => {
+            // Return the column value as a single-element iterator
+            let col_name = format_ident!("{}", col_ref.column);
+            quote! { |item| std::iter::once(item.#col_name) }
+        }
+        _ => {
+            // Default: return the item as-is in a single-element iterator
+            quote! { |item| std::iter::once(item) }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -250,4 +284,428 @@ mod tests {
         assert!(code_str.contains("rich_filter_map"));
         assert!(code_str.contains("10"));
     }
+}
+
+/// Generate IN condition
+fn generate_in_condition(in_cond: &InCondition) -> TokenStream {
+    match in_cond {
+        InCondition::Subquery {
+            field,
+            subquery,
+            negated,
+        } => {
+            let field_access = generate_field_access(field);
+            
+            // Get the subquery variable name
+            // We use the plan pointer as a unique identifier
+            let subquery_ptr = Arc::as_ptr(subquery) as usize;
+            let subquery_var = format_ident!("subquery_{}_data", subquery_ptr);
+            
+            if *negated {
+                quote! {
+                    move |item| !#subquery_var.contains(&#field_access)
+                }
+            } else {
+                quote! {
+                    move |item| #subquery_var.contains(&#field_access)
+                }
+            }
+        }
+        InCondition::Vec {
+            field,
+            vector_name,
+            negated,
+            ..
+        } => {
+            let field_access = generate_field_access(field);
+            let vec_var = format_ident!("{}", vector_name);
+            
+            if *negated {
+                quote! {
+                    |item| !#vec_var.contains(&#field_access)
+                }
+            } else {
+                quote! {
+                    |item| #vec_var.contains(&#field_access)
+                }
+            }
+        }
+    }
+}
+
+/// Generate EXISTS condition
+fn generate_exists_condition(exists_cond: &ExistsCondition) -> TokenStream {
+    match exists_cond {
+        ExistsCondition::Subquery { subquery, negated } => {
+            // For EXISTS, we just check if the subquery returned any results
+            let subquery_ptr = Arc::as_ptr(subquery) as usize;
+            let subquery_var = format_ident!("subquery_{}_data", subquery_ptr);
+            
+            if *negated {
+                quote! {
+                    move |_item| #subquery_var.is_empty()
+                }
+            } else {
+                quote! {
+                    move |_item| !#subquery_var.is_empty()
+                }
+            }
+        }
+        ExistsCondition::Vec { vector_name, negated, .. } => {
+            // For EXISTS with a vector variable
+            let vec_var = format_ident!("{}", vector_name);
+            
+            if *negated {
+                quote! {
+                    |_item| #vec_var.is_empty()
+                }
+            } else {
+                quote! {
+                    |_item| !#vec_var.is_empty()
+                }
+            }
+        }
+    }
+}
+fn generate_join(
+    left: &Arc<IrPlan>,
+    right: &Arc<IrPlan>,
+    conditions: &[JoinCondition],
+    join_type: &JoinType,
+    ctx_name: &syn::Ident,
+) -> TokenStream {
+    let left_code = generate_ir_plan(left, ctx_name);
+    let right_code = generate_ir_plan(right, ctx_name);
+
+    // Generate join key extraction functions
+    let left_key_fn = generate_join_key_fn(conditions, true);
+    let right_key_fn = generate_join_key_fn(conditions, false);
+
+    match join_type {
+        JoinType::Inner => {
+            quote! {
+                #left_code
+                    .join(#right_code, #left_key_fn, #right_key_fn)
+                    .map(|(left, right)| {
+                        let mut result = left.clone();
+                        result.extend(right.clone());
+                        result
+                    })
+            }
+        }
+        JoinType::Left => {
+            quote! {
+                #left_code
+                    .left_join(#right_code, #left_key_fn, #right_key_fn)
+                    .map(|(left, right_opt)| {
+                        let mut result = left.clone();
+                        if let Some(right) = right_opt {
+                            result.extend(right.clone());
+                        } else {
+                            // Pad with NULLs for missing right side
+                            // TODO: determine right side column count
+                            result.push("NULL".to_string());
+                        }
+                        result
+                    })
+            }
+        }
+        JoinType::Outer => {
+            quote! {
+                #left_code
+                    .outer_join(#right_code, #left_key_fn, #right_key_fn)
+                    .map(|(left_opt, right_opt)| {
+                        let mut result = Vec::new();
+                        if let Some(left) = left_opt {
+                            result.extend(left.clone());
+                        } else {
+                            // Pad with NULLs for missing left side
+                            result.push("NULL".to_string());
+                        }
+                        if let Some(right) = right_opt {
+                            result.extend(right.clone());
+                        } else {
+                            // Pad with NULLs for missing right side
+                            result.push("NULL".to_string());
+                        }
+                        result
+                    })
+            }
+        }
+    }
+}
+
+fn generate_join_key_fn(conditions: &[JoinCondition], is_left: bool) -> TokenStream {
+    if conditions.len() == 1 {
+        let col = if is_left {
+            &conditions[0].left_col
+        } else {
+            &conditions[0].right_col
+        };
+        let column_access = generate_column_access(col);
+        quote! {
+            move |item: &Vec<String>| #column_access.clone()
+        }
+    } else {
+        // Multi-column join key: create tuple
+        let key_parts: Vec<_> = conditions
+            .iter()
+            .map(|cond| {
+                let col = if is_left { &cond.left_col } else { &cond.right_col };
+                generate_column_access(col)
+            })
+            .collect();
+
+        quote! {
+            move |item: &Vec<String>| (#(#key_parts.clone()),*)
+        }
+    }
+}
+
+fn generate_group_by(
+    input: &Arc<IrPlan>,
+    keys: &[ColumnRef],
+    aggregations: &[ProjectionColumn],
+    having: &Option<GroupClause>,
+    ctx_name: &syn::Ident,
+) -> TokenStream {
+    let input_code = generate_ir_plan(input, ctx_name);
+
+    // Extract AggregateFunction from ProjectionColumn::Aggregate variants
+    let agg_functions: Vec<&AggregateFunction> = aggregations
+        .iter()
+        .filter_map(|proj| {
+            if let ProjectionColumn::Aggregate(agg, _) = proj {
+                Some(agg)
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    // Generate group key extraction function
+    let key_fn = if keys.len() == 1 {
+        let col_access = generate_column_access(&keys[0]);
+        quote! {
+            move |item: &Vec<String>| #col_access.clone()
+        }
+    } else {
+        let key_parts: Vec<_> = keys.iter().map(generate_column_access).collect();
+        quote! {
+            move |item: &Vec<String>| (#(#key_parts.clone()),*)
+        }
+    };
+
+    // Generate aggregation logic
+    let agg_init = generate_aggregation_init(&agg_functions);
+    let agg_fold = generate_aggregation_fold(&agg_functions);
+    let agg_result = generate_aggregation_result(&agg_functions, keys);
+
+    let mut result = quote! {
+        #input_code
+            .group_by(#key_fn)
+            .fold(
+                #agg_init,
+                #agg_fold
+            )
+            .map(#agg_result)
+    };
+
+    // Apply HAVING filter if present
+    if let Some(having_clause) = having {
+        let having_filter = generate_having_filter(having_clause);
+        result = quote! {
+            #result.filter(#having_filter)
+        };
+    }
+
+    result
+}
+
+fn generate_aggregation_init(aggregations: &[&AggregateFunction]) -> TokenStream {
+    // Initialize accumulator: (count, sums, maxs, mins)
+    let init_values: Vec<_> = aggregations
+        .iter()
+        .map(|agg| match agg.function {
+            AggregateType::Count => quote! { 0.0f64 },
+            AggregateType::Sum | AggregateType::Avg => quote! { 0.0f64 },
+            AggregateType::Max => quote! { f64::NEG_INFINITY },
+            AggregateType::Min => quote! { f64::INFINITY },
+        })
+        .collect();
+
+    quote! {
+        || vec![#(#init_values),*]
+    }
+}
+
+fn generate_aggregation_fold(aggregations: &[&AggregateFunction]) -> TokenStream {
+    let fold_ops: Vec<_> = aggregations
+        .iter()
+        .enumerate()
+        .map(|(i, agg)| {
+            let idx = syn::Index::from(i);
+            let column_access = generate_column_access(&agg.column);
+
+            match agg.function {
+                AggregateType::Count => quote! {
+                    acc[#idx] += 1.0;
+                },
+                AggregateType::Sum | AggregateType::Avg => quote! {
+                    if let Ok(val) = #column_access.parse::<f64>() {
+                        acc[#idx] += val;
+                    }
+                },
+                AggregateType::Max => quote! {
+                    if let Ok(val) = #column_access.parse::<f64>() {
+                        if val > acc[#idx] {
+                            acc[#idx] = val;
+                        }
+                    }
+                },
+                AggregateType::Min => quote! {
+                    if let Ok(val) = #column_access.parse::<f64>() {
+                        if val < acc[#idx] {
+                            acc[#idx] = val;
+                        }
+                    }
+                },
+            }
+        })
+        .collect();
+
+    quote! {
+        move |mut acc: Vec<f64>, item: &Vec<String>| {
+            #(#fold_ops)*
+            acc
+        }
+    }
+}
+
+fn generate_aggregation_result(
+    aggregations: &[&AggregateFunction],
+    keys: &[ColumnRef],
+) -> TokenStream {
+    let result_parts: Vec<_> = aggregations
+        .iter()
+        .enumerate()
+        .map(|(i, agg)| {
+            let idx = syn::Index::from(i);
+            match agg.function {
+                AggregateType::Avg => quote! {
+                    if agg_values[0] > 0.0 {
+                        (agg_values[#idx] / agg_values[0]).to_string()
+                    } else {
+                        "0".to_string()
+                    }
+                },
+                _ => quote! {
+                    agg_values[#idx].to_string()
+                },
+            }
+        })
+        .collect();
+
+    if keys.is_empty() {
+        // No grouping keys, just return aggregates
+        quote! {
+            move |(_key, agg_values): ((), Vec<f64>)| {
+                vec![#(#result_parts),*]
+            }
+        }
+    } else if keys.len() == 1 {
+        // Single grouping key
+        quote! {
+            move |(key, agg_values): (String, Vec<f64>)| {
+                let mut result = vec![key];
+                result.extend(vec![#(#result_parts),*]);
+                result
+            }
+        }
+    } else {
+        // Multiple grouping keys (tuple)
+        let key_count = keys.len();
+        let key_indices: Vec<_> = (0..key_count).map(syn::Index::from).collect();
+        quote! {
+            move |(key_tuple, agg_values): (_, Vec<f64>)| {
+                let mut result = vec![#(key_tuple.#key_indices),*];
+                result.extend(vec![#(#result_parts),*]);
+                result
+            }
+        }
+    }
+}
+
+fn generate_having_filter(having: &GroupClause) -> TokenStream {
+    // For now, implement basic HAVING support
+    // TODO: Full expression evaluation
+    quote! {
+        |_item: &Vec<String>| true
+    }
+}
+
+fn generate_order_by(
+    input: &Arc<IrPlan>,
+    items: &[OrderByItem],
+    ctx_name: &syn::Ident,
+) -> TokenStream {
+    let input_code = generate_ir_plan(input, ctx_name);
+
+    // ORDER BY requires collecting all data for global sort
+    // This is expensive in distributed mode
+    let sort_key_fn = generate_sort_key_fn(items);
+
+    quote! {
+        {
+            let mut collected = #input_code.collect_vec();
+            collected.sort_by(#sort_key_fn);
+            env.stream_iter(collected)
+        }
+    }
+}
+
+fn generate_sort_key_fn(items: &[OrderByItem]) -> TokenStream {
+    // Generate comparison function for sorting
+    let comparisons: Vec<_> = items
+        .iter()
+        .map(|item| {
+            let col_access_a = generate_column_access_with_var(&item.column, "a");
+            let col_access_b = generate_column_access_with_var(&item.column, "b");
+            
+            match item.direction {
+                OrderDirection::Asc => quote! {
+                    match #col_access_a.cmp(&#col_access_b) {
+                        std::cmp::Ordering::Equal => {},
+                        other => return other,
+                    }
+                },
+                OrderDirection::Desc => quote! {
+                    match #col_access_b.cmp(&#col_access_a) {
+                        std::cmp::Ordering::Equal => {},
+                        other => return other,
+                    }
+                },
+            }
+        })
+        .collect();
+
+    quote! {
+        |a: &Vec<String>, b: &Vec<String>| {
+            #(#comparisons)*
+            std::cmp::Ordering::Equal
+        }
+    }
+}
+
+fn generate_column_access_with_var(col: &ColumnRef, var_name: &str) -> TokenStream {
+    let var = format_ident!("{}", var_name);
+    // For now, use positional access based on column name
+    // TODO: Track actual column positions from schema
+    quote! { &#var[0] }
+}
+
+fn generate_column_access(col: &ColumnRef) -> TokenStream {
+    // For now, use positional access based on column name
+    // TODO: Track actual column positions from schema
+    quote! { &item[0] }
 }

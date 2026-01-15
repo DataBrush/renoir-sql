@@ -1,5 +1,5 @@
-use renoir_ir::{FilterClause, FilterConditionType, IrPlan, Pipeline, Program};
-use std::collections::HashSet;
+use renoir_ir::{ExistsCondition, FilterClause, FilterConditionType, InCondition, IrPlan, Pipeline, Program};
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 /// Information about a detected subquery
@@ -32,6 +32,8 @@ pub enum SubqueryContext {
 pub struct SubqueryDetector {
     next_id: usize,
     subqueries: Vec<SubqueryInfo>,
+    /// Map from subquery plan pointer to its ID (for deduplication and dependency tracking)
+    plan_to_id: HashMap<usize, usize>,
 }
 
 impl SubqueryDetector {
@@ -39,6 +41,7 @@ impl SubqueryDetector {
         Self {
             next_id: 0,
             subqueries: Vec::new(),
+            plan_to_id: HashMap::new(),
         }
     }
 
@@ -97,10 +100,15 @@ impl SubqueryDetector {
         match filter {
             FilterClause::Base(cond_type) => {
                 match cond_type {
-                    FilterConditionType::In(_in_cond) => {
-                        // Check if this is a subquery IN condition
-                        // For now, we'll need to extend the IR to support this
-                        // This is a placeholder for future implementation
+                    FilterConditionType::In(in_cond) => {
+                        if let InCondition::Subquery { subquery, .. } = in_cond {
+                            self.register_subquery(subquery.clone(), SubqueryContext::WhereClause);
+                        }
+                    }
+                    FilterConditionType::Exists(exists_cond) => {
+                        if let ExistsCondition::Subquery { subquery, .. } = exists_cond {
+                            self.register_subquery(subquery.clone(), SubqueryContext::WhereClause);
+                        }
                     }
                     _ => {
                         // Other filter types don't contain subqueries
@@ -114,26 +122,100 @@ impl SubqueryDetector {
         }
     }
 
-    /// Register a new subquery
+    /// Register a new subquery and return its ID
+    /// If the subquery was already registered, return existing ID
     fn register_subquery(
         &mut self,
         plan: Arc<IrPlan>,
         context: SubqueryContext,
     ) -> usize {
+        // Use the Arc pointer address as a unique identifier
+        let plan_ptr = Arc::as_ptr(&plan) as usize;
+        
+        // Check if we've already registered this subquery
+        if let Some(&existing_id) = self.plan_to_id.get(&plan_ptr) {
+            return existing_id;
+        }
+
         let id = self.next_id;
         self.next_id += 1;
 
-        // Detect dependencies by checking what subqueries this plan references
-        let dependencies = HashSet::new(); // TODO: implement dependency detection
+        // Detect dependencies by recursively scanning the subquery
+        let dependencies = self.find_dependencies(&plan);
 
         self.subqueries.push(SubqueryInfo {
             id,
-            plan,
+            plan: plan.clone(),
             context,
             dependencies,
         });
 
+        self.plan_to_id.insert(plan_ptr, id);
         id
+    }
+
+    /// Find all subquery IDs that this plan depends on
+    fn find_dependencies(&mut self, plan: &Arc<IrPlan>) -> HashSet<usize> {
+        let mut deps = HashSet::new();
+        
+        match plan.as_ref() {
+            IrPlan::Source { .. } => {}
+            IrPlan::Filter { input, predicate } => {
+                deps.extend(self.find_dependencies(input));
+                self.find_dependencies_in_filter(predicate, &mut deps);
+            }
+            IrPlan::Map { input, .. } => {
+                deps.extend(self.find_dependencies(input));
+            }
+            IrPlan::FlatMap { input, .. } => {
+                deps.extend(self.find_dependencies(input));
+            }
+            IrPlan::GroupBy { input, .. } => {
+                deps.extend(self.find_dependencies(input));
+            }
+            IrPlan::Join { left, right, .. } => {
+                deps.extend(self.find_dependencies(left));
+                deps.extend(self.find_dependencies(right));
+            }
+            IrPlan::OrderBy { input, .. } => {
+                deps.extend(self.find_dependencies(input));
+            }
+            IrPlan::Limit { input, .. } => {
+                deps.extend(self.find_dependencies(input));
+            }
+            IrPlan::Distinct { input } => {
+                deps.extend(self.find_dependencies(input));
+            }
+        }
+        
+        deps
+    }
+
+    /// Find subquery dependencies in a filter clause
+    fn find_dependencies_in_filter(&self, filter: &FilterClause, deps: &mut HashSet<usize>) {
+        match filter {
+            FilterClause::Base(cond_type) => {
+                match cond_type {
+                    FilterConditionType::In(InCondition::Subquery { subquery, .. }) => {
+                        let plan_ptr = Arc::as_ptr(subquery) as usize;
+                        if let Some(&id) = self.plan_to_id.get(&plan_ptr) {
+                            deps.insert(id);
+                        }
+                    }
+                    FilterConditionType::Exists(ExistsCondition::Subquery { subquery, .. }) => {
+                        let plan_ptr = Arc::as_ptr(subquery) as usize;
+                        if let Some(&id) = self.plan_to_id.get(&plan_ptr) {
+                            deps.insert(id);
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            FilterClause::Expression { left, right, .. } => {
+                self.find_dependencies_in_filter(left, deps);
+                self.find_dependencies_in_filter(right, deps);
+            }
+        }
     }
 }
 

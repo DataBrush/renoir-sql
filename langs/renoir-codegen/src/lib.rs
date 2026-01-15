@@ -11,7 +11,10 @@ mod utils;
 
 use analysis::{ConnectorScanner, DependencyGraph, SubqueryDetector};
 use connectors::ConnectorRegistry;
-use generation::{generate_imports, generate_pipelines, generate_sinks, generate_sources};
+use generation::{
+    generate_imports, generate_pipelines, generate_sinks, generate_sources,
+    generate_subquery_execution,
+};
 use utils::NameGenerator;
 
 /// Generate Renoir code from a Program IR using a provided context
@@ -38,6 +41,11 @@ pub fn generate_program_with_context(program: &Program, ctx_name: &Ident) -> Tok
     let imports = generate_imports(&connector_types);
     let sources = generate_sources(&program.sources, ctx_name);
     let sinks = generate_sinks(&program.sinks);
+    
+    // Phase 3: Subquery Execution (if any)
+    let subquery_exec = generate_subquery_execution(&subqueries, ctx_name);
+    
+    // Main Pipeline
     let pipelines = generate_pipelines(&program.pipelines, program, ctx_name);
 
     quote! {
@@ -45,6 +53,7 @@ pub fn generate_program_with_context(program: &Program, ctx_name: &Ident) -> Tok
             #imports
             #sources
             #sinks
+            #subquery_exec
             #pipelines
         }
     }
