@@ -1,0 +1,8 @@
+[package]
+name = "sql-macro-test"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+renoir-sql = { path = "../../langs/renoir-sql" }
+renoir = "0.5"
