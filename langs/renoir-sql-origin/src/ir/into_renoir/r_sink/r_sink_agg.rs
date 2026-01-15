@@ -1,7 +1,7 @@
+use crate::ir::AggregateType;
 use crate::ir::ir_ast_structure::ProjectionColumn;
 use crate::ir::r_sink::r_sink_fold::create_map;
 use crate::ir::r_sink::r_sink_utils::{AccumulatorInfo, AccumulatorValue};
-use crate::ir::AggregateType;
 use crate::struct_object::object::QueryObject;
 
 /// Helper function to convert StreamInfo's agg_position into AccumulatorInfo
@@ -45,5 +45,11 @@ pub(crate) fn create_aggregate_map_from_previous(
     let acc_info = create_accumulator_info_from_stream(query_object, stream_name);
 
     // Reuse the existing create_map function
-    create_map(projection_clauses, &acc_info, stream_name, struct_name, query_object)
+    create_map(
+        projection_clauses,
+        &acc_info,
+        stream_name,
+        struct_name,
+        query_object,
+    )
 }

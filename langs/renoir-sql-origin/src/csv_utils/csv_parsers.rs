@@ -45,7 +45,7 @@ pub(crate) fn parse_type_string(input: &str) -> Result<Vec<String>, ParseTypeErr
                 invalid_type => {
                     return Err(ParseTypeError {
                         message: format!("Invalid type: {}", invalid_type),
-                    })
+                    });
                 }
             };
 

@@ -1,22 +1,19 @@
-use crate::ir::ir_ast_structure::{ComplexField, ProjectionColumn};
 use crate::ir::IrLiteral;
+use crate::ir::ir_ast_structure::{ComplexField, ProjectionColumn};
 use crate::struct_object::object::QueryObject;
 use core::panic;
 
 pub(crate) fn create_simple_map(
     projection_clauses: &[ProjectionColumn],
     stream_name: &String,
-    struct_name : &String,
+    struct_name: &String,
     query_object: &QueryObject,
 ) -> String {
     let empty_string = "".to_string();
     let mut all_streams = Vec::new();
 
     let main_stream = query_object.get_stream(stream_name);
-    let mut map_string = format!(
-        ".map(move |x| {} {{ ",
-        struct_name
-    );
+    let mut map_string = format!(".map(move |x| {} {{ ", struct_name);
     //if it has a join tree, get all the streams involved in the join
     if main_stream.join_tree.is_some() {
         all_streams.extend(
@@ -77,7 +74,6 @@ pub(crate) fn create_simple_map(
                     }
 
                     if is_key {
-                        
                         let key_pos = keys.iter().find(|key| key.0.column == col_ref.column).map_or_else(
                     || panic!("Key column {} not found in keys", col_ref.column),
                     |key| key.1.to_string(),
@@ -343,7 +339,10 @@ pub(crate) fn process_complex_field(
         }
 
         if is_key {
-            let key_pos = keys.iter().find(|key| key.0.column == col.column).map_or_else(
+            let key_pos = keys
+                .iter()
+                .find(|key| key.0.column == col.column)
+                .map_or_else(
                     || panic!("Key column {} not found in keys", col.column),
                     |key| key.1.to_string(),
                 );
@@ -398,7 +397,7 @@ pub(crate) fn process_complex_field(
             }
             IrLiteral::Float(f) => format!("{:.2}", f),
             IrLiteral::String(s) => format!("\"{}\"", s),
-            IrLiteral::Boolean(b) => b.to_string()
+            IrLiteral::Boolean(b) => b.to_string(),
         }
     } else if let Some((ref result, ref result_type)) = field.subquery_vec {
         if result_type == "String" {

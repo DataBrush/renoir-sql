@@ -28,12 +28,8 @@ pub(crate) fn process_scalar_subquery(
     let mut project_count_new = 0;
 
     // Start processing from the root node of the subquery plan (index 0)
-    let (subquery_ir_plan, _) = process_node(
-        subquery_plan,
-        0, 
-        &mut project_count_new,
-        conv_object,
-    )?;
+    let (subquery_ir_plan, _) =
+        process_node(subquery_plan, 0, &mut project_count_new, conv_object)?;
 
     // Create and return a ComplexField with the subquery
     Ok(ComplexField {

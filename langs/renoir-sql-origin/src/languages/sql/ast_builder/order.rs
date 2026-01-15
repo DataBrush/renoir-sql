@@ -37,15 +37,15 @@ impl OrderParser {
                             return Err(Box::new(SqlParseError::InvalidInput(format!(
                                 "Expected column reference, got {:?}",
                                 column_ref.as_rule()
-                            ))))
+                            ))));
                         }
                     };
 
-                      // Default values
+                    // Default values
                     let mut direction = OrderDirection::Asc; // Default to ascending if not specified
                     let mut nulls_first: Option<bool> = None; // Default to None if not specified
 
-                     // Check for optional direction (ASC/DESC) and nulls handling
+                    // Check for optional direction (ASC/DESC) and nulls handling
                     for option in item_inner.by_ref() {
                         match option.as_rule() {
                             Rule::order_direction => {
@@ -55,7 +55,7 @@ impl OrderParser {
                                     _ => {
                                         return Err(Box::new(SqlParseError::InvalidInput(
                                             "Invalid sort direction".to_string(),
-                                        )))
+                                        )));
                                     }
                                 };
                             }
@@ -66,7 +66,7 @@ impl OrderParser {
                                     _ => {
                                         return Err(Box::new(SqlParseError::InvalidInput(
                                             "Invalid nulls handling".to_string(),
-                                        )))
+                                        )));
                                     }
                                 };
                             }
@@ -74,7 +74,7 @@ impl OrderParser {
                                 return Err(Box::new(SqlParseError::InvalidInput(format!(
                                     "Expected order direction or nulls handling, got {:?}",
                                     option.as_rule()
-                                ))))
+                                ))));
                             }
                         }
                     }
@@ -89,7 +89,7 @@ impl OrderParser {
                     return Err(Box::new(SqlParseError::InvalidInput(format!(
                         "Expected order item, got {:?}",
                         item.as_rule()
-                    ))))
+                    ))));
                 }
             }
         }

@@ -5,7 +5,7 @@ use indexmap::IndexMap;
 // struct to store the accumulator value
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub(crate) enum AccumulatorValue {
-    Aggregate(AggregateType, ColumnRef)
+    Aggregate(AggregateType, ColumnRef),
 }
 
 #[derive(Debug)]

@@ -1,5 +1,5 @@
 use super::error::SqlParseError;
-use super::{sql_ast_structure::*, SqlParser};
+use super::{SqlParser, sql_ast_structure::*};
 use crate::languages::sql::ast_builder::Rule;
 use pest::iterators::Pair;
 

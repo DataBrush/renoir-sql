@@ -1,6 +1,4 @@
-use crate::ir::ir_ast_structure::{
-    AggregateType, ComplexField, GroupBaseCondition, GroupClause,
-};
+use crate::ir::ir_ast_structure::{AggregateType, ComplexField, GroupBaseCondition, GroupClause};
 use crate::ir::r_group::r_group_keys::{GroupAccumulatorInfo, GroupAccumulatorValue};
 use crate::ir::{ColumnRef, InCondition, QueryObject};
 

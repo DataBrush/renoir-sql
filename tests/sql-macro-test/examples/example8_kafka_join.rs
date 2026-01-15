@@ -3,10 +3,10 @@ use renoir_sql::sql;
 
 /// Example 8: Purchase event extraction demonstration
 /// Demonstrates the SQL syntax for streaming event filtering
-/// 
+///
 /// NOTE: Currently uses CSV for demonstration. Kafka connector implementation pending.
 /// The SQL shows how stream processing would work once Kafka connectors are ready.
-/// 
+///
 /// Prerequisites:
 /// 1. Start Kafka: ./kafka-scripts/setup-kafka.sh
 /// 2. Publish events: ./kafka-scripts/publish-events.sh
@@ -103,6 +103,6 @@ fn main() {
         WHERE event_type = 'purchase';
         "
     }
-    
+
     ctx.execute_blocking();
 }

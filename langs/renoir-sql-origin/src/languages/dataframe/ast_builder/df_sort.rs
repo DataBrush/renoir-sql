@@ -60,7 +60,11 @@ fn process_sort_object(
     let direction = match direction.split('.').last() {
         Some("Ascending$") => OrderDirection::Asc,
         Some("Descending$") => OrderDirection::Desc,
-        _ => return Err(Box::new(ConversionError::UnsupportedExpressionType(direction.to_string()))),
+        _ => {
+            return Err(Box::new(ConversionError::UnsupportedExpressionType(
+                direction.to_string(),
+            )));
+        }
     };
 
     let null_ordering = sort_order
@@ -72,7 +76,11 @@ fn process_sort_object(
     let nulls_first = match null_ordering.split('.').last() {
         Some("NullsFirst$") => Some(true),
         Some("NullsLast$") => Some(false),
-        _ => return Err(Box::new(ConversionError::UnsupportedExpressionType(null_ordering.to_string()))),
+        _ => {
+            return Err(Box::new(ConversionError::UnsupportedExpressionType(
+                null_ordering.to_string(),
+            )));
+        }
     };
 
     // Get the child index to find the column reference
@@ -86,9 +94,9 @@ fn process_sort_object(
     let column_ref = process_sort_column(spec_array, child_idx + 1, conv_object)?;
 
     // Create the OrderByItem
-    let order_item = OrderByItem { 
+    let order_item = OrderByItem {
         column: column_ref,
-        direction, 
+        direction,
         nulls_first,
     };
 
@@ -119,7 +127,9 @@ fn process_sort_column(
         .ok_or_else(|| Box::new(ConversionError::InvalidClassName))?;
 
     if node_type != "AttributeReference" {
-        return Err(Box::new(ConversionError::UnsupportedExpressionType(node_type.to_string())));
+        return Err(Box::new(ConversionError::UnsupportedExpressionType(
+            node_type.to_string(),
+        )));
     }
 
     // Create the column reference using the utility function

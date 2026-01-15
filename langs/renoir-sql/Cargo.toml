@@ -9,8 +9,8 @@ proc-macro = true
 [dependencies]
 pest = "2.7"
 pest_derive = "2.7"
-renoir-ir = { path = "../renoir-ir" }
-renoir-codegen = { path = "../renoir-codegen" }
+renoir-ir = { path = "../renoir-ir", version = "*"}
+renoir-codegen = { path = "../renoir-codegen", version = "*"}
 syn = { version = "2.0", features = ["full"] }
 quote = "1.0"
 proc-macro2 = "1.0"

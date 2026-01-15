@@ -18,7 +18,7 @@ use generation::{
 use utils::NameGenerator;
 
 /// Generate Renoir code from a Program IR using a provided context
-/// 
+///
 /// This is the main entry point for code generation. It follows this process:
 /// 1. Analysis Phase: Scan for connectors and subqueries, build dependency graph
 /// 2. Import Generation: Generate necessary use statements
@@ -41,10 +41,10 @@ pub fn generate_program_with_context(program: &Program, ctx_name: &Ident) -> Tok
     let imports = generate_imports(&connector_types);
     let sources = generate_sources(&program.sources, ctx_name);
     let sinks = generate_sinks(&program.sinks);
-    
+
     // Phase 3: Subquery Execution (if any)
     let subquery_exec = generate_subquery_execution(&subqueries, ctx_name);
-    
+
     // Main Pipeline
     let pipelines = generate_pipelines(&program.pipelines, program, ctx_name);
 
@@ -62,18 +62,18 @@ pub fn generate_program_with_context(program: &Program, ctx_name: &Ident) -> Tok
 /// Legacy function that creates its own context (kept for backward compatibility)
 pub fn generate_program(program: &Program) -> TokenStream {
     let ctx_name = syn::Ident::new("ctx", proc_macro2::Span::call_site());
-    
+
     let program_code = generate_program_with_context(program, &ctx_name);
-    
+
     quote! {
         {
             use renoir::prelude::*;
-            
+
             let config = RuntimeConfig::local(4).unwrap();
             let ctx = StreamContext::new(config);
-            
+
             #program_code
-            
+
             ctx.execute_blocking();
         }
     }

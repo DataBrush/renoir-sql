@@ -13,7 +13,6 @@ pub(crate) mod where_clause;
 use pest::iterators::Pair;
 pub use sql_ast_structure::SqlAST;
 
-
 use crate::languages::sql::ast_builder::builder::SqlASTBuilder;
 use crate::languages::sql::ast_builder::error::SqlParseError;
 use pest::Parser;

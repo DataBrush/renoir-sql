@@ -12,7 +12,9 @@ pub struct IrASTBuilder;
 
 impl IrASTBuilder {
     /// Parses the input IR query string and builds an IR AST.
-    pub(crate) fn build_ast_from_pairs(pairs: Pairs<Rule>) -> Result<Arc<IrPlan>, Box<IrParseError>> {
+    pub(crate) fn build_ast_from_pairs(
+        pairs: Pairs<Rule>,
+    ) -> Result<Arc<IrPlan>, Box<IrParseError>> {
         let mut current_plan: Option<Arc<IrPlan>> = None;
 
         // Process each clause in the query
@@ -91,7 +93,7 @@ impl IrASTBuilder {
                                 return Err(Box::new(IrParseError::InvalidInput(format!(
                                     "Unexpected clause: {:?}",
                                     clause.as_rule()
-                                ))))
+                                ))));
                             }
                         }
                     }
@@ -99,7 +101,7 @@ impl IrASTBuilder {
                 _ => {
                     return Err(Box::new(IrParseError::InvalidInput(
                         "Expected query".to_string(),
-                    )))
+                    )));
                 }
             }
         }

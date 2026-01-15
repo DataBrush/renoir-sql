@@ -3,10 +3,10 @@ use renoir_sql::sql;
 
 /// Example 7: Long session filtering demonstration
 /// Demonstrates the SQL syntax for streaming event filtering
-/// 
+///
 /// NOTE: Currently uses CSV for demonstration. Kafka connector implementation pending.
 /// The SQL shows how streaming filtering would work once Kafka connectors are ready.
-/// 
+///
 /// Prerequisites:
 /// 1. Start Kafka: ./kafka-scripts/setup-kafka.sh
 /// 2. Publish events: ./kafka-scripts/publish-events.sh

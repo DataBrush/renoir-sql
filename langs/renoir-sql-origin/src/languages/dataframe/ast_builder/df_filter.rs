@@ -45,7 +45,7 @@ pub(crate) fn process_filter(
 pub(crate) fn process_condition_node(
     condition_array: &[Value],
     idx: usize,
-    project_count:i64,
+    project_count: i64,
     conv_object: &mut ConverterObject,
 ) -> Result<(FilterClause, usize), Box<ConversionError>> {
     if idx >= condition_array.len() {
@@ -73,7 +73,8 @@ pub(crate) fn process_condition_node(
         "IsNotNull" | "IsNull" => {
             process_null_node(condition_array, node_type, idx, project_count, conv_object)
         }
-        "EqualTo" | "GreaterThan" | "LessThan" | "GreaterThanOrEqual" | "LessThanOrEqual" | "NotEqualTo" => {
+        "EqualTo" | "GreaterThan" | "LessThan" | "GreaterThanOrEqual" | "LessThanOrEqual"
+        | "NotEqualTo" => {
             process_comparison_node(condition_array, node_type, idx, project_count, conv_object)
         }
         "AttributeReference" => {
@@ -86,9 +87,9 @@ pub(crate) fn process_condition_node(
             if data_type == "boolean" {
                 // This is a boolean column being used directly, equivalent to "column == true"
                 // Resolve using expr ID
-                let (_, column_name, source_name) = 
-                    conv_object.resolve_projection_column(node)
-                        .map_err(|_| Box::new(ConversionError::InvalidExpression))?;
+                let (_, column_name, source_name) = conv_object
+                    .resolve_projection_column(node)
+                    .map_err(|_| Box::new(ConversionError::InvalidExpression))?;
 
                 let column_ref = crate::ir::ColumnRef {
                     table: Some(source_name),
@@ -161,7 +162,7 @@ fn process_binary_op_node(
         _ => {
             return Err(Box::new(ConversionError::UnsupportedExpressionType(
                 op.to_string(),
-            )))
+            )));
         }
     };
 
@@ -193,8 +194,9 @@ fn process_not_node(
         if child_class.ends_with("AttributeReference") {
             // This is a boolean column being negated, equivalent to "column == false"
             // Resolve using expr ID
-            let (_, column_name, source_name) = 
-                conv_object.resolve_projection_column(child_node)
+            let (_, column_name, source_name) =
+                conv_object
+                    .resolve_projection_column(child_node)
                     .map_err(|_| Box::new(ConversionError::InvalidExpression))?;
 
             let column_ref = crate::ir::ColumnRef {
@@ -316,7 +318,7 @@ fn process_null_node(
         _ => {
             return Err(Box::new(ConversionError::UnsupportedExpressionType(
                 op.to_string(),
-            )))
+            )));
         }
     };
 
@@ -368,7 +370,7 @@ fn process_comparison_node(
         _ => {
             return Err(Box::new(ConversionError::UnsupportedExpressionType(
                 node_type.to_string(),
-            )))
+            )));
         }
     };
 
@@ -480,9 +482,9 @@ fn process_attribute_reference_node(
     let node = &condition_array[idx];
 
     // Resolve column using expression ID
-    let (_, column_name, source_name) = 
-        conv_object.resolve_projection_column(node)
-            .map_err(|_| Box::new(ConversionError::InvalidExpression))?;
+    let (_, column_name, source_name) = conv_object
+        .resolve_projection_column(node)
+        .map_err(|_| Box::new(ConversionError::InvalidExpression))?;
 
     // Create a column reference with resolved information
     let column_ref = crate::ir::ColumnRef {
@@ -567,8 +569,7 @@ fn process_expression(
         "Cast" => process_expression(condition_array, idx + 1, project_count, conv_object),
         "ScalarSubquery" => {
             // Process scalar subquery
-            let complex_field =
-                process_scalar_subquery(&condition_array[idx], conv_object)?;
+            let complex_field = process_scalar_subquery(&condition_array[idx], conv_object)?;
             Ok((complex_field, idx + 1))
         }
         _ => Err(Box::new(ConversionError::UnsupportedExpressionType(

@@ -35,7 +35,8 @@ pub(crate) fn create_aggregate_map(
     for stream in all_streams.iter() {
         keys.extend(query_object.get_stream(stream).key_columns.clone());
     }
-    let col_keys = keys.iter()
+    let col_keys = keys
+        .iter()
         .map(|key| key.0.clone())
         .collect::<Vec<ColumnRef>>();
 
@@ -228,8 +229,7 @@ fn create_fold(
                 match agg_type {
                     AggregateType::Count => {
                         if col.column == "*" {
-                            update_code
-                                .push_str(&format!("{}acc{} += 1;\n", asterisk, index_acc));
+                            update_code.push_str(&format!("{}acc{} += 1;\n", asterisk, index_acc));
                         } else {
                             update_code.push_str(&format!(
                                 "    if {}.is_some() {{{}acc{} += 1; }}\n",
@@ -339,16 +339,14 @@ pub(crate) fn create_map(
     for stream in all_streams.iter() {
         keys.extend(query_object.get_stream(stream).key_columns.clone());
     }
-    let col_keys = keys.iter()
+    let col_keys = keys
+        .iter()
         .map(|key| key.0.clone())
         .collect::<Vec<ColumnRef>>();
 
     let mut check_list = Vec::new();
 
-    result.push_str(&format!(
-        ".map(move |x| {} {{\n",
-        struct_name
-    ));
+    result.push_str(&format!(".map(move |x| {} {{\n", struct_name));
 
     let is_single_acc = acc_info.value_positions.len() == 1;
 
@@ -378,11 +376,13 @@ pub(crate) fn create_map(
                                 .0,
                         );
                         // Only compute average if sum is Some
-                        format!("if let Some(sum) = x{}.{} {{ Some(sum as f64 / x{}.{} as f64) }} else {{ None }}", 
+                        format!(
+                            "if let Some(sum) = x{}.{} {{ Some(sum as f64 / x{}.{} as f64) }} else {{ None }}",
                             if is_grouped { ".1" } else { "" },
                             sum_pos,
                             if is_grouped { ".1" } else { "" },
-                            count_pos)
+                            count_pos
+                        )
                     }
                     AggregateType::Max | AggregateType::Min | AggregateType::Sum => {
                         let pos = acc_info
@@ -467,14 +467,18 @@ pub(crate) fn create_map(
 
                 let col_stream = query_object.get_stream(col_stream_name);
                 col_stream.check_if_column_exists(&col.column);
-                let key_position = keys.iter().find(|key| key.0.column == col.column).map_or_else(
-                    || panic!("Key column {} not found in keys", col.column),
-                    |key| key.1.to_string(),
-                );
+                let key_position = keys
+                    .iter()
+                    .find(|key| key.0.column == col.column)
+                    .map_or_else(
+                        || panic!("Key column {} not found in keys", col.column),
+                        |key| key.1.to_string(),
+                    );
                 let is_single_key = keys.len() == 1;
                 if is_single_key {
                     if col_type == "f64" {
-                        "if x.0.is_some() { Some(x.0.unwrap().into_inner() as f64) } else { None }".to_string()
+                        "if x.0.is_some() { Some(x.0.unwrap().into_inner() as f64) } else { None }"
+                            .to_string()
                     } else {
                         "x.0.clone()".to_string()
                     }
@@ -557,8 +561,7 @@ fn process_complex_field_for_map(
                 //they are both numbers
                 if left_type == "f64" || right_type == "f64" {
                     *cast = "f64".to_string();
-                }
-                else if left_type == "i64" || right_type == "i64" {
+                } else if left_type == "i64" || right_type == "i64" {
                     *cast = "i64".to_string();
                 }
             }
@@ -702,7 +705,7 @@ fn process_complex_field_for_map(
             }
             IrLiteral::Float(f) => format!("{:.2}", f),
             IrLiteral::String(s) => format!("\"{}\"", s),
-            IrLiteral::Boolean(b) => b.to_string()
+            IrLiteral::Boolean(b) => b.to_string(),
         }
     } else if let Some(ref agg) = field.aggregate {
         // Handle aggregate access

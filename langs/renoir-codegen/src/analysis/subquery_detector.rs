@@ -1,4 +1,6 @@
-use renoir_ir::{ExistsCondition, FilterClause, FilterConditionType, InCondition, IrPlan, Pipeline, Program};
+use renoir_ir::{
+    ExistsCondition, FilterClause, FilterConditionType, InCondition, IrPlan, Pipeline, Program,
+};
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
@@ -124,14 +126,10 @@ impl SubqueryDetector {
 
     /// Register a new subquery and return its ID
     /// If the subquery was already registered, return existing ID
-    fn register_subquery(
-        &mut self,
-        plan: Arc<IrPlan>,
-        context: SubqueryContext,
-    ) -> usize {
+    fn register_subquery(&mut self, plan: Arc<IrPlan>, context: SubqueryContext) -> usize {
         // Use the Arc pointer address as a unique identifier
         let plan_ptr = Arc::as_ptr(&plan) as usize;
-        
+
         // Check if we've already registered this subquery
         if let Some(&existing_id) = self.plan_to_id.get(&plan_ptr) {
             return existing_id;
@@ -157,7 +155,7 @@ impl SubqueryDetector {
     /// Find all subquery IDs that this plan depends on
     fn find_dependencies(&mut self, plan: &Arc<IrPlan>) -> HashSet<usize> {
         let mut deps = HashSet::new();
-        
+
         match plan.as_ref() {
             IrPlan::Source { .. } => {}
             IrPlan::Filter { input, predicate } => {
@@ -187,30 +185,28 @@ impl SubqueryDetector {
                 deps.extend(self.find_dependencies(input));
             }
         }
-        
+
         deps
     }
 
     /// Find subquery dependencies in a filter clause
     fn find_dependencies_in_filter(&self, filter: &FilterClause, deps: &mut HashSet<usize>) {
         match filter {
-            FilterClause::Base(cond_type) => {
-                match cond_type {
-                    FilterConditionType::In(InCondition::Subquery { subquery, .. }) => {
-                        let plan_ptr = Arc::as_ptr(subquery) as usize;
-                        if let Some(&id) = self.plan_to_id.get(&plan_ptr) {
-                            deps.insert(id);
-                        }
+            FilterClause::Base(cond_type) => match cond_type {
+                FilterConditionType::In(InCondition::Subquery { subquery, .. }) => {
+                    let plan_ptr = Arc::as_ptr(subquery) as usize;
+                    if let Some(&id) = self.plan_to_id.get(&plan_ptr) {
+                        deps.insert(id);
                     }
-                    FilterConditionType::Exists(ExistsCondition::Subquery { subquery, .. }) => {
-                        let plan_ptr = Arc::as_ptr(subquery) as usize;
-                        if let Some(&id) = self.plan_to_id.get(&plan_ptr) {
-                            deps.insert(id);
-                        }
-                    }
-                    _ => {}
                 }
-            }
+                FilterConditionType::Exists(ExistsCondition::Subquery { subquery, .. }) => {
+                    let plan_ptr = Arc::as_ptr(subquery) as usize;
+                    if let Some(&id) = self.plan_to_id.get(&plan_ptr) {
+                        deps.insert(id);
+                    }
+                }
+                _ => {}
+            },
             FilterClause::Expression { left, right, .. } => {
                 self.find_dependencies_in_filter(left, deps);
                 self.find_dependencies_in_filter(right, deps);

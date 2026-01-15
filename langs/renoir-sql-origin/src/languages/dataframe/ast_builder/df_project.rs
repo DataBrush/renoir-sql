@@ -56,9 +56,10 @@ pub(crate) fn process_project(
     // and only update the ones that correspond to the new stream we're creating
     for update in &projection_updates {
         // Only update the source to the new stream name for expressions that are being projected
-        conv_object
-            .expr_to_source
-            .insert(update.expr_id, (update.column_name.clone(), stream_name.clone()));
+        conv_object.expr_to_source.insert(
+            update.expr_id,
+            (update.column_name.clone(), stream_name.clone()),
+        );
     }
 
     let project_node = Arc::new(IrPlan::Project {
@@ -117,9 +118,10 @@ pub(crate) fn process_project_agg(
     // and only update the ones that correspond to the new stream we're creating
     for update in &projection_updates {
         // Only update the source to the new stream name for expressions that are being projected
-        conv_object
-            .expr_to_source
-            .insert(update.expr_id, (update.column_name.clone(), stream_name.clone()));
+        conv_object.expr_to_source.insert(
+            update.expr_id,
+            (update.column_name.clone(), stream_name.clone()),
+        );
     }
 
     // For aggregates, we don't create a new scan node immediately
@@ -312,7 +314,11 @@ fn process_expression(
 
             // Only track expression IDs that are actually being projected in this step
             // This prevents overwriting expression IDs that shouldn't be updated
-            expr_updates.push(ExprUpdate::new(expr_id, final_column_name, "placeholder".to_string()));
+            expr_updates.push(ExprUpdate::new(
+                expr_id,
+                final_column_name,
+                "placeholder".to_string(),
+            ));
 
             Ok((
                 ProjectionColumn::Column(column_ref, column_alias),
@@ -417,7 +423,7 @@ fn process_aggregate(
         _ => {
             return Err(Box::new(ConversionError::UnsupportedExpressionType(
                 agg_type.to_string(),
-            )))
+            )));
         }
     };
 
@@ -475,7 +481,11 @@ fn process_aggregate(
                     original_column
                 )
             });
-            expr_updates.push(ExprUpdate::new(agg_expr_id, agg_name, "placeholder".to_string()));
+            expr_updates.push(ExprUpdate::new(
+                agg_expr_id,
+                agg_name,
+                "placeholder".to_string(),
+            ));
         }
 
         Ok((
@@ -558,7 +568,7 @@ fn process_arithmetic_operation(
         _ => {
             return Err(Box::new(ConversionError::UnsupportedExpressionType(
                 op_type.to_string(),
-            )))
+            )));
         }
     };
 
@@ -618,7 +628,11 @@ fn process_complex_field(
             };
 
             // Track for updates
-            expr_updates.push(ExprUpdate::new(expr_id, original_column, "placeholder".to_string()));
+            expr_updates.push(ExprUpdate::new(
+                expr_id,
+                original_column,
+                "placeholder".to_string(),
+            ));
 
             Ok((
                 ComplexField {
@@ -719,7 +733,7 @@ fn process_aggregate_field(
         _ => {
             return Err(Box::new(ConversionError::UnsupportedExpressionType(
                 agg_type.to_string(),
-            )))
+            )));
         }
     };
 
@@ -732,7 +746,6 @@ fn process_aggregate_field(
             .last()
             == Some("Literal")
     {
-
         let column_ref = ColumnRef {
             table: None,
             column: "*".to_string(),

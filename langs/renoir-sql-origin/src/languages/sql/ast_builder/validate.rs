@@ -243,11 +243,10 @@ fn validate_arithmetic_columns(
             });
 
             if !is_in_group_by {
-                return Err(Box::new(SqlParseError::InvalidInput(
-                               format!("Column '{}' in HAVING clause must be in GROUP BY or used in an aggregate function",
-                                   col_ref
-                              )
-                           )));
+                return Err(Box::new(SqlParseError::InvalidInput(format!(
+                    "Column '{}' in HAVING clause must be in GROUP BY or used in an aggregate function",
+                    col_ref
+                ))));
             };
             Ok(())
         }

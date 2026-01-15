@@ -1,5 +1,5 @@
 use super::error::SqlParseError;
-use super::{sql_ast_structure::*, SqlParser};
+use super::{SqlParser, sql_ast_structure::*};
 use crate::languages::sql::ast_builder::Rule;
 use pest::iterators::Pair;
 
@@ -97,7 +97,7 @@ impl GroupByParser {
                 return Err(Box::new(SqlParseError::InvalidInput(format!(
                     "Unexpected rule in having: {:?}",
                     first.as_rule()
-                ))))
+                ))));
             }
         };
 
@@ -110,7 +110,7 @@ impl GroupByParser {
                     return Err(Box::new(SqlParseError::InvalidInput(format!(
                         "Invalid binary operator in having: {}",
                         op.as_str()
-                    ))))
+                    ))));
                 }
             };
 
@@ -127,7 +127,7 @@ impl GroupByParser {
                     return Err(Box::new(SqlParseError::InvalidInput(format!(
                         "Unexpected rule in having: {:?}",
                         right_term.as_rule()
-                    ))))
+                    ))));
                 }
             };
 
@@ -186,7 +186,7 @@ impl GroupByParser {
                     _ => {
                         return Err(Box::new(SqlParseError::InvalidInput(
                             "Invalid boolean value".to_string(),
-                        )))
+                        )));
                     }
                 };
 
@@ -286,11 +286,7 @@ impl GroupByParser {
                     )));
                 } else {
                     return Ok(HavingClause::Base(HavingBaseCondition::In(
-                        InCondition::Having(
-                            having_field.unwrap(),
-                            Box::new(subquery),
-                            is_negated,
-                        ),
+                        InCondition::Having(having_field.unwrap(), Box::new(subquery), is_negated),
                     )));
                 }
             }
@@ -331,7 +327,7 @@ impl GroupByParser {
                         return Err(Box::new(SqlParseError::InvalidInput(format!(
                             "Invalid null operator in having: {}",
                             operator.as_str()
-                        ))))
+                        ))));
                     }
                 };
 
@@ -402,7 +398,7 @@ impl GroupByParser {
                         return Err(Box::new(SqlParseError::InvalidInput(format!(
                             "Invalid operator in having: {}",
                             operator.as_str()
-                        ))))
+                        ))));
                     }
                 };
 
@@ -495,7 +491,7 @@ impl GroupByParser {
                     _ => {
                         return Err(Box::new(SqlParseError::InvalidInput(
                             "Invalid aggregate function".to_string(),
-                        )))
+                        )));
                     }
                 };
 
@@ -670,7 +666,7 @@ impl GroupByParser {
                     _ => {
                         return Err(Box::new(SqlParseError::InvalidInput(
                             "Invalid boolean value".to_string(),
-                        )))
+                        )));
                     }
                 };
                 Ok(ArithmeticExpr::Literal(value))
@@ -720,7 +716,7 @@ impl GroupByParser {
                     _ => {
                         return Err(Box::new(SqlParseError::InvalidInput(
                             "Unknown aggregate function".to_string(),
-                        )))
+                        )));
                     }
                 };
 

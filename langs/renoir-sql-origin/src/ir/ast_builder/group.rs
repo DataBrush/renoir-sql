@@ -1,5 +1,5 @@
 use super::error::IrParseError;
-use super::{ir_ast_structure::*, IrParser};
+use super::{IrParser, ir_ast_structure::*};
 use crate::ir::ast_builder::Rule;
 use pest::iterators::Pair;
 
@@ -73,7 +73,7 @@ impl GroupParser {
                     return Err(Box::new(IrParseError::InvalidInput(format!(
                         "Invalid binary operator: {}",
                         op.as_str()
-                    ))))
+                    ))));
                 }
             };
 
@@ -141,7 +141,7 @@ impl GroupParser {
                     _ => {
                         return Err(Box::new(IrParseError::InvalidInput(
                             "Invalid boolean value".to_string(),
-                        )))
+                        )));
                     }
                 };
 
@@ -162,7 +162,7 @@ impl GroupParser {
                             return Err(Box::new(IrParseError::InvalidInput(format!(
                                 "Invalid null operator: {}",
                                 operator_pair.as_str()
-                            ))))
+                            ))));
                         }
                     };
 
@@ -189,7 +189,7 @@ impl GroupParser {
                             return Err(Box::new(IrParseError::InvalidInput(format!(
                                 "Invalid operator: {}",
                                 op
-                            ))))
+                            ))));
                         }
                     };
 
@@ -287,7 +287,7 @@ impl GroupParser {
                             return Err(Box::new(IrParseError::InvalidInput(format!(
                                 "Invalid null operator: {}",
                                 operator_pair.as_str()
-                            ))))
+                            ))));
                         }
                     };
 
@@ -326,7 +326,7 @@ impl GroupParser {
                 return Err(Box::new(IrParseError::InvalidInput(format!(
                     "Expected arithmetic_par or arithmetic_factor, got {:?}",
                     first_pair.as_rule()
-                ))))
+                ))));
             }
         };
 
@@ -341,7 +341,7 @@ impl GroupParser {
                     return Err(Box::new(IrParseError::InvalidInput(format!(
                         "Expected arithmetic_par or arithmetic_factor, got {:?}",
                         next_operand.as_rule()
-                    ))))
+                    ))));
                 }
             };
 
@@ -496,7 +496,7 @@ impl GroupParser {
                 return Err(Box::new(IrParseError::InvalidInput(format!(
                     "Invalid aggregate function: {}",
                     func_type.as_str()
-                ))))
+                ))));
             }
         };
 
@@ -520,7 +520,7 @@ impl GroupParser {
                     return Err(Box::new(IrParseError::InvalidInput(format!(
                         "Invalid column reference in aggregate: {:?}",
                         column_ref.as_rule()
-                    ))))
+                    ))));
                 }
             }
         };

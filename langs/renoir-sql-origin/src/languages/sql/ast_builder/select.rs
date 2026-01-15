@@ -1,6 +1,6 @@
 use super::error::SqlParseError;
 use super::literal::LiteralParser;
-use super::{sql_ast_structure::*, SqlParser};
+use super::{SqlParser, sql_ast_structure::*};
 use crate::languages::sql::ast_builder::Rule;
 use pest::iterators::Pair;
 
@@ -131,7 +131,7 @@ impl SelectParser {
             _ => {
                 return Err(Box::new(SqlParseError::InvalidInput(
                     "Unknown aggregate function".to_string(),
-                )))
+                )));
             }
         };
 
@@ -167,7 +167,7 @@ impl SelectParser {
                         return Err(Box::new(SqlParseError::InvalidInput(format!(
                             "Invalid first operand: {:?}",
                             first.as_rule()
-                        ))))
+                        ))));
                     }
                 };
 
@@ -186,7 +186,7 @@ impl SelectParser {
                             return Err(Box::new(SqlParseError::InvalidInput(format!(
                                 "Invalid right operand: {:?}",
                                 right.as_rule()
-                            ))))
+                            ))));
                         }
                     };
 

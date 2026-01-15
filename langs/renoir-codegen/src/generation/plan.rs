@@ -38,7 +38,11 @@ pub fn generate_ir_plan(plan: &Arc<IrPlan>, ctx_name: &syn::Ident) -> TokenStrea
             }
         }
 
-        IrPlan::Limit { input, limit, offset } => {
+        IrPlan::Limit {
+            input,
+            limit,
+            offset,
+        } => {
             let input_code = generate_ir_plan(input, ctx_name);
             let limit_val = *limit as usize;
 
@@ -295,12 +299,12 @@ fn generate_in_condition(in_cond: &InCondition) -> TokenStream {
             negated,
         } => {
             let field_access = generate_field_access(field);
-            
+
             // Get the subquery variable name
             // We use the plan pointer as a unique identifier
             let subquery_ptr = Arc::as_ptr(subquery) as usize;
             let subquery_var = format_ident!("subquery_{}_data", subquery_ptr);
-            
+
             if *negated {
                 quote! {
                     move |item| !#subquery_var.contains(&#field_access)
@@ -319,7 +323,7 @@ fn generate_in_condition(in_cond: &InCondition) -> TokenStream {
         } => {
             let field_access = generate_field_access(field);
             let vec_var = format_ident!("{}", vector_name);
-            
+
             if *negated {
                 quote! {
                     |item| !#vec_var.contains(&#field_access)
@@ -340,7 +344,7 @@ fn generate_exists_condition(exists_cond: &ExistsCondition) -> TokenStream {
             // For EXISTS, we just check if the subquery returned any results
             let subquery_ptr = Arc::as_ptr(subquery) as usize;
             let subquery_var = format_ident!("subquery_{}_data", subquery_ptr);
-            
+
             if *negated {
                 quote! {
                     move |_item| #subquery_var.is_empty()
@@ -351,10 +355,14 @@ fn generate_exists_condition(exists_cond: &ExistsCondition) -> TokenStream {
                 }
             }
         }
-        ExistsCondition::Vec { vector_name, negated, .. } => {
+        ExistsCondition::Vec {
+            vector_name,
+            negated,
+            ..
+        } => {
             // For EXISTS with a vector variable
             let vec_var = format_ident!("{}", vector_name);
-            
+
             if *negated {
                 quote! {
                     |_item| #vec_var.is_empty()
@@ -451,7 +459,11 @@ fn generate_join_key_fn(conditions: &[JoinCondition], is_left: bool) -> TokenStr
         let key_parts: Vec<_> = conditions
             .iter()
             .map(|cond| {
-                let col = if is_left { &cond.left_col } else { &cond.right_col };
+                let col = if is_left {
+                    &cond.left_col
+                } else {
+                    &cond.right_col
+                };
                 generate_column_access(col)
             })
             .collect();
@@ -671,7 +683,7 @@ fn generate_sort_key_fn(items: &[OrderByItem]) -> TokenStream {
         .map(|item| {
             let col_access_a = generate_column_access_with_var(&item.column, "a");
             let col_access_b = generate_column_access_with_var(&item.column, "b");
-            
+
             match item.direction {
                 OrderDirection::Asc => quote! {
                     match #col_access_a.cmp(&#col_access_b) {

@@ -36,7 +36,7 @@ pub(crate) fn process_join(
         _ => {
             return Err(Box::new(ConversionError::UnsupportedJoinType(
                 join_type_str.to_string(),
-            )))
+            )));
         }
     };
 
@@ -57,7 +57,8 @@ pub(crate) fn process_join(
     }
 
     // Try to extract simple equality conditions for the join
-    let (simple_conditions, complex_conditions) = extract_join_conditions(condition_array, conv_object)?;
+    let (simple_conditions, complex_conditions) =
+        extract_join_conditions(condition_array, conv_object)?;
 
     // Create the join with only simple equality conditions
     let join_node = Arc::new(IrPlan::Join {
@@ -112,25 +113,30 @@ fn extract_join_conditions(
 
                 if let Some(class) = node.get("class").and_then(|c| c.as_str()) {
                     let expr_type = class.split('.').last().unwrap_or("");
-                    
+
                     // Only process EqualTo as simple join conditions
                     if expr_type == "EqualTo" {
-                        if let Ok((join_condition, _)) = process_simple_equality(condition_array, i, conv_object) {
+                        if let Ok((join_condition, _)) =
+                            process_simple_equality(condition_array, i, conv_object)
+                        {
                             simple_conditions.push(join_condition[0].clone());
                         } else {
                             // If it's not a simple equality between column references,
                             // add it as a complex condition
-                            if let Ok((filter_clause, _)) = 
+                            if let Ok((filter_clause, _)) =
                                 crate::languages::dataframe::ast_builder::df_filter::process_condition_node(
                                     condition_array, i,  0, conv_object
                                 ) {
                                 complex_conditions.push(filter_clause);
                             }
                         }
-                    } else if expr_type == "GreaterThan" || expr_type == "LessThan" || 
-                              expr_type == "GreaterThanOrEqual" || expr_type == "LessThanOrEqual" {
+                    } else if expr_type == "GreaterThan"
+                        || expr_type == "LessThan"
+                        || expr_type == "GreaterThanOrEqual"
+                        || expr_type == "LessThanOrEqual"
+                    {
                         // These operators are always complex conditions
-                        if let Ok((filter_clause, _)) = 
+                        if let Ok((filter_clause, _)) =
                             crate::languages::dataframe::ast_builder::df_filter::process_condition_node(
                                 condition_array, i,  0, conv_object
                             ) {
@@ -139,27 +145,37 @@ fn extract_join_conditions(
                     }
                 }
             }
-        },
+        }
         "EqualTo" => {
             // Single equality condition
-            if let Ok((join_condition, _)) = process_simple_equality(condition_array, 0, conv_object) {
+            if let Ok((join_condition, _)) =
+                process_simple_equality(condition_array, 0, conv_object)
+            {
                 simple_conditions.push(join_condition[0].clone());
             } else {
                 // Not a simple equality
-                if let Ok((filter_clause, _)) = 
+                if let Ok((filter_clause, _)) =
                     crate::languages::dataframe::ast_builder::df_filter::process_condition_node(
-                        condition_array, 0, 0, conv_object
-                    ) {
+                        condition_array,
+                        0,
+                        0,
+                        conv_object,
+                    )
+                {
                     complex_conditions.push(filter_clause);
                 }
             }
-        },
+        }
         _ => {
             // Any other condition is treated as complex
-            if let Ok((filter_clause, _)) = 
+            if let Ok((filter_clause, _)) =
                 crate::languages::dataframe::ast_builder::df_filter::process_condition_node(
-                    condition_array, 0,  0, conv_object
-                ) {
+                    condition_array,
+                    0,
+                    0,
+                    conv_object,
+                )
+            {
                 complex_conditions.push(filter_clause);
             }
         }
@@ -189,7 +205,7 @@ fn process_simple_equality(
 
     if node_type != "EqualTo" {
         return Err(Box::new(ConversionError::UnsupportedExpressionType(
-            format!("Expected EqualTo, got {}", node_type)
+            format!("Expected EqualTo, got {}", node_type),
         )));
     }
 
@@ -205,9 +221,9 @@ fn process_simple_equality(
     if left_child_idx >= condition_array.len() {
         return Err(Box::new(ConversionError::InvalidExpression));
     }
-    
+
     let left_node = &condition_array[left_child_idx];
-    
+
     // Ensure the left side is an attribute reference
     let left_class = left_node
         .get("class")
@@ -221,28 +237,31 @@ fn process_simple_equality(
 
     if left_type != "AttributeReference" {
         return Err(Box::new(ConversionError::UnsupportedExpressionType(
-            format!("Complex join conditions not supported. Left side is: {}", left_type)
+            format!(
+                "Complex join conditions not supported. Left side is: {}",
+                left_type
+            ),
         )));
     }
 
     // Process the left side using expr ID resolution
-    let (_, left_column_name, left_source_name) = 
-        conv_object.resolve_projection_column(left_node)
-            .map_err(|_| Box::new(ConversionError::InvalidExpression))?;
+    let (_, left_column_name, left_source_name) = conv_object
+        .resolve_projection_column(left_node)
+        .map_err(|_| Box::new(ConversionError::InvalidExpression))?;
 
     let left_col = ColumnRef {
         table: Some(left_source_name),
         column: left_column_name,
     };
-    
+
     // Calculate right index
     let right_idx = left_child_idx + 1;
     if right_idx >= condition_array.len() {
         return Err(Box::new(ConversionError::InvalidExpression));
     }
-    
+
     let right_node = &condition_array[right_idx];
-    
+
     // Ensure the right side is also an attribute reference
     let right_class = right_node
         .get("class")
@@ -256,14 +275,17 @@ fn process_simple_equality(
 
     if right_type != "AttributeReference" {
         return Err(Box::new(ConversionError::UnsupportedExpressionType(
-            format!("Complex join conditions not supported. Right side is: {}", right_type)
+            format!(
+                "Complex join conditions not supported. Right side is: {}",
+                right_type
+            ),
         )));
     }
-    
+
     // Process the right side using expr ID resolution
-    let (_, right_column_name, right_source_name) = 
-        conv_object.resolve_projection_column(right_node)
-            .map_err(|_| Box::new(ConversionError::InvalidExpression))?;
+    let (_, right_column_name, right_source_name) = conv_object
+        .resolve_projection_column(right_node)
+        .map_err(|_| Box::new(ConversionError::InvalidExpression))?;
 
     let right_col = ColumnRef {
         table: Some(right_source_name),
@@ -271,7 +293,10 @@ fn process_simple_equality(
     };
 
     Ok((
-        vec![JoinCondition { left_col, right_col }],
+        vec![JoinCondition {
+            left_col,
+            right_col,
+        }],
         right_idx + 1,
     ))
 }
@@ -282,14 +307,8 @@ pub(crate) fn process_join_child(
     project_count: &mut i64,
     conv_object: &mut ConverterObject,
 ) -> Result<(Arc<IrPlan>, usize), Box<ConversionError>> {
-    
     // Process the child node using the process_node function
-    let child_ir = process_node(
-        full_plan,
-        child_index,
-        project_count,
-        conv_object,
-    )?;
+    let child_ir = process_node(full_plan, child_index, project_count, conv_object)?;
 
     let processed_child_node = match &*child_ir.0 {
         // If the child node is a Project node, we need to create a Scan node with the project as input
@@ -297,21 +316,21 @@ pub(crate) fn process_join_child(
             // Create a Scan node with the project as input
             // Extract alias from the first column that has a table reference
             let alias = extract_alias_from_columns(columns);
-            
+
             // Get the next stream name for this join child
             let stream_name = if let Some(last) = conv_object.stream_names.last() {
                 last.clone()
             } else {
                 conv_object.increment_and_get_stream_name(*project_count)
             };
-            
+
             let scan_node = IrPlan::Scan {
                 input: child_ir.0,
                 stream_name: stream_name.clone(),
                 alias,
             };
             Arc::new(scan_node)
-        },
+        }
         _ => {
             // For any other type of node, just return it as is
             child_ir.0.clone()

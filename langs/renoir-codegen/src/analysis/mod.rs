@@ -5,4 +5,5 @@ pub mod subquery_detector;
 
 pub use connector_scanner::ConnectorScanner;
 pub use dependency_graph::DependencyGraph;
-pub use schema_tracker::SchemaTracker;pub use subquery_detector::{SubqueryDetector, SubqueryInfo};
+pub use schema_tracker::SchemaTracker;
+pub use subquery_detector::{SubqueryDetector, SubqueryInfo};

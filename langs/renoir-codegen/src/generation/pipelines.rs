@@ -23,19 +23,12 @@ pub fn generate_pipelines(
 
 /// Generate code for a single pipeline
 /// A pipeline flows from source through transformations to sink
-fn generate_pipeline(
-    pipeline: &Pipeline,
-    program: &Program,
-    ctx_name: &syn::Ident,
-) -> TokenStream {
+fn generate_pipeline(pipeline: &Pipeline, program: &Program, ctx_name: &syn::Ident) -> TokenStream {
     // Generate the transformation pipeline
     let plan_code = generate_ir_plan(&pipeline.plan, ctx_name);
 
     // Find the corresponding sink definition
-    let sink = program
-        .sinks
-        .iter()
-        .find(|s| s.name == pipeline.sink_name);
+    let sink = program.sinks.iter().find(|s| s.name == pipeline.sink_name);
 
     // Generate the sink operation
     let pipeline_with_sink = if let Some(sink_def) = sink {
@@ -53,7 +46,7 @@ fn generate_pipeline(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use renoir_ir::{ConnectorConfig, FieldDef, SinkDef, IrPlan, OptionValue, ConnectorOption};
+    use renoir_ir::{ConnectorConfig, ConnectorOption, FieldDef, IrPlan, OptionValue, SinkDef};
     use std::sync::Arc;
 
     #[test]

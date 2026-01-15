@@ -89,7 +89,7 @@ pub fn extract_metadata(
                         return Err(io::Error::new(
                             io::ErrorKind::InvalidData,
                             MetadataError::MissingField("columns".to_string()),
-                        ))
+                        ));
                     }
                 };
 

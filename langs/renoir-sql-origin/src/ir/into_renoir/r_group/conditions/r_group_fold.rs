@@ -356,12 +356,7 @@ pub(crate) fn create_fold_operation(
 
     let fold_str = format!(
         ".group_by_fold(|x| ({}), {}, |acc: &mut {}, x| {{ \n{}}}, |acc: &mut {}, local_acc| {{\n{}}})\n",
-        keys,
-        tuple_init,
-        tuple_type,
-        update_code,
-        tuple_type,
-        global_update_code
+        keys, tuple_init, tuple_type, update_code, tuple_type, global_update_code
     );
 
     let stream = query_object.get_mut_stream(stream_name);

@@ -34,8 +34,7 @@ pub fn validate_ir_ast(ast: Arc<IrPlan>) -> Arc<IrPlan> {
         }
 
         // For any other node type, wrap with a SELECT * projection
-        _ => {
-            Arc::new(IrPlan::Project {
+        _ => Arc::new(IrPlan::Project {
             input: ast,
             columns: vec![ProjectionColumn::Column(
                 ColumnRef {
@@ -45,6 +44,6 @@ pub fn validate_ir_ast(ast: Arc<IrPlan>) -> Arc<IrPlan> {
                 None,
             )],
             distinct: false,
-        })},
+        }),
     }
 }

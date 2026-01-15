@@ -8,8 +8,8 @@ use indexmap::IndexMap;
 /// join tree, aggregate functions, limit, order by, and distinct properties.
 #[derive(Debug, Clone)]
 pub struct StreamInfo {
-    pub id: String,                                        // Unique stream identifier
-    pub source_table: String,                              // Original table/CSV source
+    pub id: String,                                // Unique stream identifier
+    pub source_table: String,                      // Original table/CSV source
     pub alias: String, // Single, unique alias. If my query does not have a join, this is empty. Otherwise it is the alias of the table or the table name.
     pub initial_columns: IndexMap<String, String>, // Column name → type mappings
     pub access: AccessPath, // Access path for tuple
@@ -17,11 +17,11 @@ pub struct StreamInfo {
     pub key_columns: Vec<(ColumnRef, usize)>, // Key columns and position
     pub op_chain: Vec<String>, // Operator chain
     pub final_struct: IndexMap<String, IndexMap<String, String>>, // key: final_struct name, value: struct
-    pub join_tree: Option<JoinTree>, // Join tree
+    pub join_tree: Option<JoinTree>,                              // Join tree
     pub agg_position: IndexMap<AggregateFunction, String>, // Aggregate function → position mappings
-    pub limit: Option<(usize, usize)>, // Limit and offset for the stream
+    pub limit: Option<(usize, usize)>,                     // Limit and offset for the stream
     pub order_by: Vec<OrderByItem>, // Column name, order (ASC/DESC), nulls first/last
-    pub distinct: bool, // Whether the output of the stream needs to be distinct
+    pub distinct: bool,             // Whether the output of the stream needs to be distinct
 }
 
 #[derive(Debug, Clone)]
@@ -112,7 +112,8 @@ impl StreamInfo {
                         JoinTree::Leaf(stream_name) => {
                             // Get the stream info for the right stream and return its final struct name
                             let right_stream = query_object.get_stream(stream_name);
-                            let right_stream_structs = right_stream.final_struct.keys().collect::<Vec<_>>();
+                            let right_stream_structs =
+                                right_stream.final_struct.keys().collect::<Vec<_>>();
                             if right_stream_structs.len() > 1 {
                                 right_stream_structs
                                     .get(right_stream_structs.len() - 2)

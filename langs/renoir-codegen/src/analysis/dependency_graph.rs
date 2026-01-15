@@ -21,7 +21,7 @@ impl DependencyGraph {
     /// Add a node to the graph
     pub fn add_node(&mut self, node_id: usize, deps: HashSet<usize>) {
         self.dependencies.insert(node_id, deps.clone());
-        
+
         // Build reverse graph
         for &dep_id in &deps {
             self.dependents
@@ -29,7 +29,7 @@ impl DependencyGraph {
                 .or_insert_with(HashSet::new)
                 .insert(node_id);
         }
-        
+
         // Ensure node exists in dependents map
         self.dependents.entry(node_id).or_insert_with(HashSet::new);
     }
@@ -37,11 +37,11 @@ impl DependencyGraph {
     /// Build a dependency graph from detected subqueries
     pub fn build(subqueries: &[SubqueryInfo]) -> Self {
         let mut graph = Self::new();
-        
+
         for subquery in subqueries {
             graph.add_node(subquery.id, subquery.dependencies.clone());
         }
-        
+
         graph
     }
 

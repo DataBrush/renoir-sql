@@ -3,14 +3,13 @@ use crate::languages::dataframe::conversion_error::ConversionError;
 use indexmap::IndexMap;
 use serde_json::Value;
 
-
 pub struct ConverterObject {
     pub expr_to_source: IndexMap<usize, (String, String)>,
     pub stream_index: usize,
     pub stream_names: Vec<String>,
 }
 
-pub struct ExprUpdate{
+pub struct ExprUpdate {
     pub expr_id: usize,
     pub column_name: String,
     pub source_name: String,
@@ -24,7 +23,6 @@ impl ExprUpdate {
             source_name,
         }
     }
-    
 }
 
 impl ConverterObject {

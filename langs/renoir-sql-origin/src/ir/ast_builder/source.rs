@@ -1,5 +1,5 @@
 use super::error::IrParseError;
-use super::{ir_ast_structure::*, IrParser};
+use super::{IrParser, ir_ast_structure::*};
 use crate::ir::ast_builder::Rule;
 use pest::iterators::Pair;
 use std::sync::Arc;
@@ -36,7 +36,7 @@ impl SourceParser {
                         return Err(Box::new(IrParseError::InvalidInput(format!(
                             "Invalid join type: {}",
                             pair.as_str()
-                        ))))
+                        ))));
                     }
                 };
                 // Get next token which should be 'join'

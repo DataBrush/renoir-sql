@@ -3,7 +3,7 @@ use renoir_sql::sql;
 
 /// Example 2: Simple aggregation - Count users by department
 /// Demonstrates WHERE clause with complex filtering
-/// 
+///
 /// NOTE: Full GROUP BY with aggregation sinks requires additional integration work.
 /// This example demonstrates the SQL parsing and code generation capabilities.
 fn main() {

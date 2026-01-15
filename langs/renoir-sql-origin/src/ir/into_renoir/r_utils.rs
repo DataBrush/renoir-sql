@@ -1,5 +1,5 @@
-use crate::ir::QueryObject;
 use crate::ir::IrLiteral;
+use crate::ir::QueryObject;
 
 // helper function to convert literal to string
 pub(crate) fn convert_literal(literal: &IrLiteral) -> String {
@@ -7,7 +7,7 @@ pub(crate) fn convert_literal(literal: &IrLiteral) -> String {
         IrLiteral::Integer(val) => format!("{}", val),
         IrLiteral::Float(val) => format!("{:.2}", val),
         IrLiteral::String(val) => format!("\"{}\"", val),
-        IrLiteral::Boolean(val) => format!("{}", val)
+        IrLiteral::Boolean(val) => format!("{}", val),
     }
 }
 

@@ -1,5 +1,5 @@
-use crate::ir::validate::validate_ir_ast;
 use crate::ir::IrPlan;
+use crate::ir::validate::validate_ir_ast;
 use crate::languages::dataframe::ast_builder::df_join::process_join_child;
 use crate::languages::dataframe::conversion_error::ConversionError;
 use serde_json::Value;
@@ -227,7 +227,7 @@ pub fn process_node(
         }
         "LogicalRDD" | "LogicalRelation" => {
             *project_count += 1; // Increment project count for table scans
-                                 // This is a base table scan
+            // This is a base table scan
             Ok((
                 process_logical_rdd(node, project_count, conv_object)?,
                 current_index + 1,

@@ -1,9 +1,9 @@
+use crate::ir::QueryObject;
 use crate::ir::ir_ast_structure::ComplexField;
 use crate::ir::ir_ast_structure::{
     ColumnRef, FilterConditionType, IrLiteral, NullCondition, NullOp,
 };
 use crate::ir::r_utils::convert_literal;
-use crate::ir::QueryObject;
 use crate::ir::{BinaryOp, InCondition};
 use crate::ir::{ComparisonOp, Condition};
 use crate::ir::{ExistsCondition, FilterClause};
@@ -228,7 +228,10 @@ fn process_arithmetic_expression(
         check_list.push(format!("!{}.is_empty()", sub_name));
         //check if the type is correct
         if sub_type == "f64" {
-            format!("{}.first().unwrap().clone().unwrap().into_inner()", sub_name)
+            format!(
+                "{}.first().unwrap().clone().unwrap().into_inner()",
+                sub_name
+            )
         } else if needs_casting {
             format!(
                 "({}.first().unwrap().clone().unwrap() as {})",
@@ -293,7 +296,10 @@ fn process_condition(condition: &FilterConditionType, query_object: &QueryObject
                                     )
                                 }
                             } else {
-                                panic!("Invalid InCondition - column type {} does not match vector type {}", field_type, vector_type);
+                                panic!(
+                                    "Invalid InCondition - column type {} does not match vector type {}",
+                                    field_type, vector_type
+                                );
                             }
                         } else {
                             //standard case
@@ -357,15 +363,18 @@ fn process_condition(condition: &FilterConditionType, query_object: &QueryObject
                                     )
                                 };
                                 format!(
-                                            "if x{}.{}.as_ref().is_some() {{{}{}.contains({})}} else {{false}}",
-                                            stream.get_access().get_base_path(),
-                                            col_ref.column,
-                                            if *negated { "!" } else { "" },
-                                            vector_name,
-                                            condition_str
-                                        )
+                                    "if x{}.{}.as_ref().is_some() {{{}{}.contains({})}} else {{false}}",
+                                    stream.get_access().get_base_path(),
+                                    col_ref.column,
+                                    if *negated { "!" } else { "" },
+                                    vector_name,
+                                    condition_str
+                                )
                             } else {
-                                panic!("Invalid InCondition - column type {} does not match vector type {}", c_type, vector_type);
+                                panic!(
+                                    "Invalid InCondition - column type {} does not match vector type {}",
+                                    c_type, vector_type
+                                );
                             }
                         } else {
                             //standard case
@@ -402,7 +411,10 @@ fn process_condition(condition: &FilterConditionType, query_object: &QueryObject
                         match lit {
                             IrLiteral::Boolean(_) => {
                                 if vector_type != "bool" {
-                                    panic!("Invalid InCondition - boolean literal does not match vector type {}", vector_type);
+                                    panic!(
+                                        "Invalid InCondition - boolean literal does not match vector type {}",
+                                        vector_type
+                                    );
                                 }
                                 format!(
                                     "{}{}.contains(&{})",
@@ -418,7 +430,10 @@ fn process_condition(condition: &FilterConditionType, query_object: &QueryObject
                                     "i64"
                                 };
                                 if vector_type != "f64" && vector_type != "i64" {
-                                    panic!("Invalid InCondition - numeric literal does not match vector type {}", vector_type);
+                                    panic!(
+                                        "Invalid InCondition - numeric literal does not match vector type {}",
+                                        vector_type
+                                    );
                                 }
                                 let mut cast_type = String::new();
                                 if vector_type != literal_type {
@@ -446,7 +461,10 @@ fn process_condition(condition: &FilterConditionType, query_object: &QueryObject
                             }
                             IrLiteral::String(string) => {
                                 if vector_type != "String" {
-                                    panic!("Invalid InCondition - string literal does not match vector type {}", vector_type);
+                                    panic!(
+                                        "Invalid InCondition - string literal does not match vector type {}",
+                                        vector_type
+                                    );
                                 }
                                 //check if the string is empty
                                 if string.is_empty() {

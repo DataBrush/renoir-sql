@@ -9,7 +9,7 @@ use serde_json::Value;
 
 use crate::{
     binary_generation::{creation, execution::binary_execution},
-    ir::{ir_ast_to_renoir, IrPlan},
+    ir::{IrPlan, ir_ast_to_renoir},
     query::subquery_utils::manage_subqueries,
     struct_object::object::QueryObject,
 };

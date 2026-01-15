@@ -41,11 +41,11 @@ impl OrderParser {
                             return Err(Box::new(IrParseError::InvalidInput(format!(
                                 "Expected column reference, got {:?}",
                                 column_ref.as_rule()
-                            ))))
+                            ))));
                         }
                     };
 
-                     // Default values
+                    // Default values
                     let mut direction = OrderDirection::Asc;
                     let mut nulls_first = None;
 
@@ -59,7 +59,7 @@ impl OrderParser {
                                     _ => {
                                         return Err(Box::new(IrParseError::InvalidInput(
                                             "Invalid sort direction".to_string(),
-                                        )))
+                                        )));
                                     }
                                 };
                             }
@@ -71,7 +71,7 @@ impl OrderParser {
                                 return Err(Box::new(IrParseError::InvalidInput(format!(
                                     "Unexpected rule in order item: {:?}",
                                     option.as_rule()
-                                ))))
+                                ))));
                             }
                         }
                     }
@@ -86,7 +86,7 @@ impl OrderParser {
                     return Err(Box::new(IrParseError::InvalidInput(format!(
                         "Expected order item, got {:?}",
                         item.as_rule()
-                    ))))
+                    ))));
                 }
             }
         }

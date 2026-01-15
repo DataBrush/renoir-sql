@@ -3,7 +3,7 @@ use renoir_sql::sql;
 
 /// Example 3: Department filtering - Engineering team
 /// Demonstrates WHERE clause with string equality
-/// 
+///
 /// NOTE: JOIN support requires additional connector integration work.
 /// This example shows string-based filtering.
 fn main() {

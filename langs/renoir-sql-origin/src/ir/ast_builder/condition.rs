@@ -1,6 +1,6 @@
 use super::error::IrParseError;
 use super::literal::LiteralParser;
-use super::{ir_ast_structure::*, IrParser};
+use super::{IrParser, ir_ast_structure::*};
 use crate::ir::ast_builder::Rule;
 use pest::iterators::Pair;
 
@@ -38,7 +38,7 @@ impl ConditionParser {
                 return Err(Box::new(IrParseError::InvalidInput(format!(
                     "Unexpected rule: {:?}",
                     first.as_rule()
-                ))))
+                ))));
             }
         };
 
@@ -51,7 +51,7 @@ impl ConditionParser {
                     return Err(Box::new(IrParseError::InvalidInput(format!(
                         "Invalid binary operator: {}",
                         op.as_str()
-                    ))))
+                    ))));
                 }
             };
 
@@ -66,7 +66,7 @@ impl ConditionParser {
                     return Err(Box::new(IrParseError::InvalidInput(format!(
                         "Unexpected rule: {:?}",
                         right_term.as_rule()
-                    ))))
+                    ))));
                 }
             };
 
@@ -121,7 +121,7 @@ impl ConditionParser {
                     _ => {
                         return Err(Box::new(IrParseError::InvalidInput(
                             "Invalid boolean value".to_string(),
-                        )))
+                        )));
                     }
                 };
 
@@ -142,7 +142,7 @@ impl ConditionParser {
                             return Err(Box::new(IrParseError::InvalidInput(format!(
                                 "Invalid null operator: {}",
                                 operator_pair.as_str()
-                            ))))
+                            ))));
                         }
                     };
 
@@ -169,7 +169,7 @@ impl ConditionParser {
                             return Err(Box::new(IrParseError::InvalidInput(format!(
                                 "Invalid operator: {}",
                                 op
-                            ))))
+                            ))));
                         }
                     };
 
@@ -250,10 +250,7 @@ impl ConditionParser {
                 let subquery = IrParser::parse_subquery(subquery_expr)?;
 
                 Ok(FilterClause::Base(FilterConditionType::Exists(
-                    ExistsCondition::Subquery {
-                        subquery,
-                        negated,
-                    },
+                    ExistsCondition::Subquery { subquery, negated },
                 )))
             }
             _ => Err(Box::new(IrParseError::InvalidInput(format!(
@@ -279,7 +276,7 @@ impl ConditionParser {
                 return Err(Box::new(IrParseError::InvalidInput(format!(
                     "Expected arithmetic_par or arithmetic_factor, got {:?}",
                     first_pair.as_rule()
-                ))))
+                ))));
             }
         };
 
@@ -294,7 +291,7 @@ impl ConditionParser {
                     return Err(Box::new(IrParseError::InvalidInput(format!(
                         "Expected arithmetic_par or arithmetic_factor, got {:?}",
                         next_operand.as_rule()
-                    ))))
+                    ))));
                 }
             };
 
@@ -488,7 +485,7 @@ impl ConditionParser {
                 return Err(Box::new(IrParseError::InvalidInput(format!(
                     "Invalid aggregate function: {}",
                     func_type.as_str()
-                ))))
+                ))));
             }
         };
 
@@ -513,7 +510,7 @@ impl ConditionParser {
                     return Err(Box::new(IrParseError::InvalidInput(format!(
                         "Invalid column reference in aggregate: {:?}",
                         column_ref.as_rule()
-                    ))))
+                    ))));
                 }
             }
         };

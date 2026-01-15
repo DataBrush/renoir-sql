@@ -38,7 +38,7 @@ pub struct Pipeline {
 /// Connector configuration for sources and sinks
 #[derive(Debug, Clone, PartialEq)]
 pub struct ConnectorConfig {
-    pub connector_type: String,  // e.g., "kafka", "csv", "postgres"
+    pub connector_type: String, // e.g., "kafka", "csv", "postgres"
     pub options: Vec<ConnectorOption>,
 }
 
@@ -106,10 +106,10 @@ pub struct FieldDef {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum DataType {
-    Integer,    // i32
-    BigInt,     // i64
-    Float,      // f32
-    Double,     // f64
+    Integer, // i32
+    BigInt,  // i64
+    Float,   // f32
+    Double,  // f64
     String,
     Boolean,
     Timestamp,
@@ -538,7 +538,7 @@ mod tests {
     #[test]
     fn test_program_structure() {
         let mut program = Program::new();
-        
+
         let source = SourceDef {
             name: "sales".to_string(),
             schema: vec![FieldDef {
@@ -550,7 +550,7 @@ mod tests {
                 options: vec![],
             },
         };
-        
+
         program.add_source(source);
         assert_eq!(program.sources.len(), 1);
     }
@@ -775,7 +775,11 @@ mod tests {
             vector_name: "user_ids".to_string(),
             negated: true,
         };
-        if let ExistsCondition::Vec { vector_name, negated } = condition {
+        if let ExistsCondition::Vec {
+            vector_name,
+            negated,
+        } = condition
+        {
             assert_eq!(vector_name, "user_ids");
             assert_eq!(negated, true);
         }
@@ -787,7 +791,7 @@ mod tests {
             table: None,
             column: "name".to_string(),
         };
-        
+
         let proj1 = ProjectionColumn::Column(col_ref.clone(), Some("user_name".to_string()));
         assert!(matches!(proj1, ProjectionColumn::Column(_, Some(_))));
 

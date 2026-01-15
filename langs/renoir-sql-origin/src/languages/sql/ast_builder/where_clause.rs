@@ -1,5 +1,5 @@
 use super::error::SqlParseError;
-use super::{sql_ast_structure::*, SqlParser};
+use super::{SqlParser, sql_ast_structure::*};
 use crate::languages::sql::ast_builder::Rule;
 use pest::iterators::Pair;
 
@@ -32,7 +32,7 @@ impl ConditionParser {
                 return Err(Box::new(SqlParseError::InvalidInput(format!(
                     "Unexpected rule: {:?}",
                     first.as_rule()
-                ))))
+                ))));
             }
         };
 
@@ -45,7 +45,7 @@ impl ConditionParser {
                     return Err(Box::new(SqlParseError::InvalidInput(format!(
                         "Invalid binary operator: {}",
                         op.as_str()
-                    ))))
+                    ))));
                 }
             };
 
@@ -60,7 +60,7 @@ impl ConditionParser {
                     return Err(Box::new(SqlParseError::InvalidInput(format!(
                         "Unexpected rule: {:?}",
                         right_term.as_rule()
-                    ))))
+                    ))));
                 }
             };
 
@@ -112,7 +112,7 @@ impl ConditionParser {
                     _ => {
                         return Err(Box::new(SqlParseError::InvalidInput(
                             "Invalid boolean value".to_string(),
-                        )))
+                        )));
                     }
                 };
 
@@ -211,11 +211,7 @@ impl ConditionParser {
                     )));
                 } else {
                     return Ok(WhereClause::Base(WhereBaseCondition::In(
-                        InCondition::Where(
-                            complex_field.unwrap(),
-                            Box::new(subquery),
-                            is_negated,
-                        ),
+                        InCondition::Where(complex_field.unwrap(), Box::new(subquery), is_negated),
                     )));
                 }
             }
@@ -240,7 +236,7 @@ impl ConditionParser {
                         return Err(Box::new(SqlParseError::InvalidInput(format!(
                             "Invalid null operator: {}",
                             operator.as_str()
-                        ))))
+                        ))));
                     }
                 };
 
@@ -267,7 +263,7 @@ impl ConditionParser {
                         return Err(Box::new(SqlParseError::InvalidInput(format!(
                             "Invalid operator: {}",
                             operator.as_str()
-                        ))))
+                        ))));
                     }
                 };
 
@@ -383,7 +379,7 @@ impl ConditionParser {
                     _ => {
                         return Err(Box::new(SqlParseError::InvalidInput(
                             "Invalid boolean value".to_string(),
-                        )))
+                        )));
                     }
                 };
                 Ok(ArithmeticExpr::Literal(value))
@@ -433,7 +429,7 @@ impl ConditionParser {
                     _ => {
                         return Err(Box::new(SqlParseError::InvalidInput(
                             "Unknown aggregate function".to_string(),
-                        )))
+                        )));
                     }
                 };
 
@@ -514,7 +510,7 @@ impl ConditionParser {
                     _ => {
                         return Err(Box::new(SqlParseError::InvalidInput(
                             "Invalid boolean value".to_string(),
-                        )))
+                        )));
                     }
                 };
                 Ok(WhereField {

@@ -268,7 +268,10 @@ fn process_filter_condition(
                                             cast_type,
                                         )
                                     } else {
-                                        panic!("Invalid InCondition - column type {} does not match vector type {}", field_type, vector_type);
+                                        panic!(
+                                            "Invalid InCondition - column type {} does not match vector type {}",
+                                            field_type, vector_type
+                                        );
                                     }
                                 } else {
                                     // Generate the final string
@@ -353,15 +356,22 @@ fn process_filter_condition(
                                         };
 
                                         format!(
-                                                "if {}{}.as_ref().is_some() {{{}{}.contains({})}} else {{false}}",
-                                                access_str,
-                                                if !is_key {format!(".{}", col_ref.column)} else {"".to_string()},
-                                                if *negated { "!" } else { "" },
-                                                vector_name,
-                                                condition_str
-                                                                    )
+                                            "if {}{}.as_ref().is_some() {{{}{}.contains({})}} else {{false}}",
+                                            access_str,
+                                            if !is_key {
+                                                format!(".{}", col_ref.column)
+                                            } else {
+                                                "".to_string()
+                                            },
+                                            if *negated { "!" } else { "" },
+                                            vector_name,
+                                            condition_str
+                                        )
                                     } else {
-                                        panic!("Invalid InCondition - column type {} does not match vector type {}", c_type, vector_type);
+                                        panic!(
+                                            "Invalid InCondition - column type {} does not match vector type {}",
+                                            c_type, vector_type
+                                        );
                                     }
                                 } else {
                                     //standard case
@@ -390,13 +400,17 @@ fn process_filter_condition(
 
                                     // Generate the final string
                                     format!(
-                                            "if {}{}.as_ref().is_some() {{{}{}.contains({})}} else {{false}}",
-                                            access_str,
-                                            if !is_key {format!(".{}", col_ref.column)} else {"".to_string()},
-                                            if *negated { "!" } else { "" },
-                                            vector_name,
-                                            condition_str
-                                                            )
+                                        "if {}{}.as_ref().is_some() {{{}{}.contains({})}} else {{false}}",
+                                        access_str,
+                                        if !is_key {
+                                            format!(".{}", col_ref.column)
+                                        } else {
+                                            "".to_string()
+                                        },
+                                        if *negated { "!" } else { "" },
+                                        vector_name,
+                                        condition_str
+                                    )
                                 }
                             }
                             //third - literal case
@@ -406,7 +420,10 @@ fn process_filter_condition(
                                 match lit {
                                     IrLiteral::Boolean(_) => {
                                         if vector_type != "bool" {
-                                            panic!("Invalid InCondition - boolean literal does not match vector type {}", vector_type);
+                                            panic!(
+                                                "Invalid InCondition - boolean literal does not match vector type {}",
+                                                vector_type
+                                            );
                                         }
                                         format!(
                                             "{}{}.contains(&Some({}))",
@@ -422,7 +439,10 @@ fn process_filter_condition(
                                             "i64"
                                         };
                                         if vector_type != "f64" && vector_type != "i64" {
-                                            panic!("Invalid InCondition - numeric literal does not match vector type {}", vector_type);
+                                            panic!(
+                                                "Invalid InCondition - numeric literal does not match vector type {}",
+                                                vector_type
+                                            );
                                         }
                                         let mut cast_type = String::new();
                                         if vector_type != literal_type {
@@ -450,7 +470,10 @@ fn process_filter_condition(
                                     }
                                     IrLiteral::String(string) => {
                                         if vector_type != "String" {
-                                            panic!("Invalid InCondition - string literal does not match vector type {}", vector_type);
+                                            panic!(
+                                                "Invalid InCondition - string literal does not match vector type {}",
+                                                vector_type
+                                            );
                                         }
                                         //check if the string is empty
                                         if string.is_empty() {
@@ -591,7 +614,7 @@ fn process_filter_condition(
                                         // Types are incompatible
                                         panic!(
                                             "Invalid IN condition - expression type {} does not match vector type {}",
-                                             expr_type, vector_type
+                                            expr_type, vector_type
                                         );
                                     }
                                 } else {

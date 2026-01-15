@@ -35,4 +35,3 @@ pub enum ConversionError {
     #[error("Error parsing join, unsupported join type: {0}")]
     UnsupportedJoinType(String),
 }
-

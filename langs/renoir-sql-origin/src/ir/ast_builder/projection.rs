@@ -1,13 +1,15 @@
 use super::error::IrParseError;
 use super::literal::LiteralParser;
-use super::{ir_ast_structure::*, IrParser};
+use super::{IrParser, ir_ast_structure::*};
 use crate::ir::ast_builder::Rule;
 use pest::iterators::Pair;
 
 pub struct ProjectionParser;
 
 impl ProjectionParser {
-    pub(crate) fn parse(pair: Pair<Rule>) -> Result<(Vec<ProjectionColumn>, bool), Box<IrParseError>> {
+    pub(crate) fn parse(
+        pair: Pair<Rule>,
+    ) -> Result<(Vec<ProjectionColumn>, bool), Box<IrParseError>> {
         let mut inner = pair.into_inner();
         let mut distinct = false;
 
@@ -98,7 +100,7 @@ impl ProjectionParser {
                 return Err(Box::new(IrParseError::InvalidInput(format!(
                     "Invalid sink expression: {:?}",
                     sink_expr.as_rule()
-                ))))
+                ))));
             }
         };
 
@@ -154,7 +156,7 @@ impl ProjectionParser {
                 return Err(Box::new(IrParseError::InvalidInput(format!(
                     "Unknown aggregate function: {}",
                     unknown
-                ))))
+                ))));
             }
         };
 
@@ -184,13 +186,13 @@ impl ProjectionParser {
                     return Err(Box::new(IrParseError::InvalidInput(format!(
                         "Invalid first operand: {:?}",
                         first.as_rule()
-                    ))))
+                    ))));
                 }
             },
             None => {
                 return Err(Box::new(IrParseError::InvalidInput(
                     "Missing operand".to_string(),
-                )))
+                )));
             }
         };
 
@@ -209,13 +211,13 @@ impl ProjectionParser {
                         return Err(Box::new(IrParseError::InvalidInput(format!(
                             "Invalid right operand: {:?}",
                             right_pair.as_rule()
-                        ))))
+                        ))));
                     }
                 },
                 None => {
                     return Err(Box::new(IrParseError::InvalidInput(
                         "Missing right operand".to_string(),
-                    )))
+                    )));
                 }
             };
 

@@ -121,7 +121,7 @@ fn test_simple_in_subquery() {
         }),
         predicate: FilterClause::Base(FilterConditionType::In(InCondition::Subquery {
             field: ComplexField {
-                    aggregate: None,
+                aggregate: None,
                 column_ref: Some(ColumnRef {
                     table: None,
                     column: "id".to_string(),
@@ -167,7 +167,10 @@ fn test_simple_in_subquery() {
         code_str.contains("execute_blocking"),
         "Should have execute_blocking call"
     );
-    assert!(code_str.contains("contains"), "Should check if value is in subquery results");
+    assert!(
+        code_str.contains("contains"),
+        "Should check if value is in subquery results"
+    );
 }
 
 #[test]
@@ -230,12 +233,10 @@ fn test_exists_subquery() {
             source_name: "users".to_string(),
             alias: None,
         }),
-        predicate: FilterClause::Base(FilterConditionType::Exists(
-            ExistsCondition::Subquery {
-                subquery: subquery_plan,
-                negated: false,
-            },
-        )),
+        predicate: FilterClause::Base(FilterConditionType::Exists(ExistsCondition::Subquery {
+            subquery: subquery_plan,
+            negated: false,
+        })),
     });
 
     let pipeline = Pipeline {

@@ -3,8 +3,8 @@ use crate::struct_object::utils::check_column_validity;
 use crate::{
     binary_generation::fields::Fields,
     ir::{
-        ir_ast_structure::{AggregateType, ComplexField},
         ColumnRef, IrLiteral, IrPlan, ProjectionColumn,
+        ir_ast_structure::{AggregateType, ComplexField},
     },
 };
 use core::panic;

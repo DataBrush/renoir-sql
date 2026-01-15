@@ -657,16 +657,25 @@ fn process_scan(input: &Arc<IrPlan>, query_object: &mut QueryObject) -> Arc<IrPl
     query_object
         .streams
         .insert(stream_name.clone(), stream_info.clone());
-    query_object
-        .tables_info
-        .insert(stream_name.clone(), stream_info.final_struct.get(stream_info.final_struct.keys().last().unwrap()).unwrap().clone());
+    query_object.tables_info.insert(
+        stream_name.clone(),
+        stream_info
+            .final_struct
+            .get(stream_info.final_struct.keys().last().unwrap())
+            .unwrap()
+            .clone(),
+    );
     query_object.table_to_struct_name.insert(
         stream_name.clone(),
         stream_info.final_struct.keys().last().unwrap().to_string(),
     );
     query_object.structs.insert(
         stream_info.final_struct.keys().last().unwrap().clone(),
-        stream_info.final_struct.get(stream_info.final_struct.keys().last().unwrap()).unwrap().clone(),
+        stream_info
+            .final_struct
+            .get(stream_info.final_struct.keys().last().unwrap())
+            .unwrap()
+            .clone(),
     );
 
     let fields = query_object.get_mut_fields();

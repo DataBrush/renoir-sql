@@ -203,24 +203,12 @@ fn test_kafka_to_csv_pipeline() {
         code_str.contains("localhost:9092"),
         "Should have broker address"
     );
-    assert!(
-        code_str.contains("input_events"),
-        "Should reference topic"
-    );
-    assert!(
-        code_str.contains("stream_kafka"),
-        "Should use stream_kafka"
-    );
+    assert!(code_str.contains("input_events"), "Should reference topic");
+    assert!(code_str.contains("stream_kafka"), "Should use stream_kafka");
 
     // Verify CSV sink
-    assert!(
-        code_str.contains("write_csv_seq"),
-        "Should write to CSV"
-    );
-    assert!(
-        code_str.contains("results.csv"),
-        "Should have output path"
-    );
+    assert!(code_str.contains("write_csv_seq"), "Should write to CSV");
+    assert!(code_str.contains("results.csv"), "Should have output path");
 }
 
 #[test]
@@ -282,7 +270,10 @@ fn test_limit_operation() {
     let code_str = code.to_string();
 
     // After refactoring, limit with offset is implemented using rich_filter_map
-    assert!(code_str.contains("rich_filter_map"), "Should use rich_filter_map for limit");
+    assert!(
+        code_str.contains("rich_filter_map"),
+        "Should use rich_filter_map for limit"
+    );
     assert!(code_str.contains("50"), "Should skip 50 records");
     assert!(code_str.contains("100"), "Should limit to 100 records");
 }
@@ -363,10 +354,25 @@ fn test_csv_source_with_options() {
 
     // Verify CSV options are applied
     assert!(code_str.contains("CsvSource"), "Should use CsvSource");
-    assert!(code_str.contains("delimiter"), "Should have delimiter configuration");
-    assert!(code_str.contains("has_headers"), "Should have has_headers configuration");
-    assert!(code_str.contains("quote"), "Should have quote configuration");
-    assert!(code_str.contains("59"), "Delimiter ';' should be converted to byte 59");
+    assert!(
+        code_str.contains("delimiter"),
+        "Should have delimiter configuration"
+    );
+    assert!(
+        code_str.contains("has_headers"),
+        "Should have has_headers configuration"
+    );
+    assert!(
+        code_str.contains("quote"),
+        "Should have quote configuration"
+    );
+    assert!(
+        code_str.contains("59"),
+        "Delimiter ';' should be converted to byte 59"
+    );
     assert!(code_str.contains("false"), "has_headers should be false");
-    assert!(code_str.contains("39"), "Quote '\'' should be converted to byte 39");
+    assert!(
+        code_str.contains("39"),
+        "Quote '\'' should be converted to byte 39"
+    );
 }

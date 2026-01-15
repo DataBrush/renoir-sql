@@ -30,7 +30,11 @@ impl GroupAccumulatorInfo {
         }
     }
 
-    pub(crate) fn add_aggregate(&mut self, value: GroupAccumulatorValue, val_type: String) -> usize {
+    pub(crate) fn add_aggregate(
+        &mut self,
+        value: GroupAccumulatorValue,
+        val_type: String,
+    ) -> usize {
         if let Some((pos, _)) = self.agg_positions.get(&value) {
             *pos
         } else {
@@ -181,7 +185,7 @@ pub(crate) fn process_group_by(
 ///
 /// A String containing the tuple of column references for group by
 fn process_group_by_keys(columns: &[ColumnRef], query_object: &mut QueryObject) -> String {
-    let mut index:usize = 0;
+    let mut index: usize = 0;
     if !query_object.has_join {
         let stream_name = query_object
             .streams

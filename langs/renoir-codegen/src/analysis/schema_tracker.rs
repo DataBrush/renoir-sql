@@ -49,7 +49,9 @@ impl SchemaTracker {
                 }
             }
 
-            IrPlan::Filter { input, .. } | IrPlan::Limit { input, .. } | IrPlan::Distinct { input } => {
+            IrPlan::Filter { input, .. }
+            | IrPlan::Limit { input, .. }
+            | IrPlan::Distinct { input } => {
                 // These operations preserve the schema
                 self.get_schema(input)
             }
@@ -122,7 +124,11 @@ impl SchemaTracker {
 
     /// Get the column position for a column reference
     /// Returns None if column not found
-    pub fn get_column_position(&mut self, plan: &Arc<IrPlan>, col_ref: &ColumnRef) -> Option<usize> {
+    pub fn get_column_position(
+        &mut self,
+        plan: &Arc<IrPlan>,
+        col_ref: &ColumnRef,
+    ) -> Option<usize> {
         let schema = self.get_schema(plan);
 
         // Try to find by exact column name
@@ -262,9 +268,7 @@ mod tests {
 
         let filter = Arc::new(IrPlan::Filter {
             input: source,
-            predicate: renoir_ir::FilterClause::Base(renoir_ir::FilterConditionType::Boolean(
-                true,
-            )),
+            predicate: renoir_ir::FilterClause::Base(renoir_ir::FilterConditionType::Boolean(true)),
         });
 
         let schema = tracker.get_schema(&filter);

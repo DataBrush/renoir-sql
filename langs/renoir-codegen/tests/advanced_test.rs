@@ -1,8 +1,8 @@
 use renoir_codegen::generate_program_with_context;
 use renoir_ir::{
     AggregateFunction, AggregateType, ColumnRef, ConnectorConfig, ConnectorOption, DataType,
-    FieldDef, IrPlan, JoinCondition, JoinType, OrderByItem, OrderDirection, OptionValue,
-    Pipeline, Program, ProjectionColumn, SinkDef, SourceDef,
+    FieldDef, IrPlan, JoinCondition, JoinType, OptionValue, OrderByItem, OrderDirection, Pipeline,
+    Program, ProjectionColumn, SinkDef, SourceDef,
 };
 use std::sync::Arc;
 
@@ -395,7 +395,7 @@ fn test_order_by_desc() {
 
 #[test]
 fn test_complex_query_join_and_group_by() {
-    // SELECT customer_id, COUNT(*) 
+    // SELECT customer_id, COUNT(*)
     // FROM users JOIN orders ON users.id = orders.user_id
     // GROUP BY customer_id
 

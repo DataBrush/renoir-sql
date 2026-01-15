@@ -76,7 +76,7 @@ impl SqlASTBuilder {
                         _ => {
                             return Err(Box::new(SqlParseError::InvalidInput(
                                 "Invalid SELECT clause".to_string(),
-                            )))
+                            )));
                         }
                     };
 
@@ -141,7 +141,7 @@ impl SqlASTBuilder {
                 _ => {
                     return Err(Box::new(SqlParseError::InvalidInput(
                         "Expected query".to_string(),
-                    )))
+                    )));
                 }
             }
         }

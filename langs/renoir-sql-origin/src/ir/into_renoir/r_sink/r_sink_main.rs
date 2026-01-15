@@ -38,7 +38,8 @@ pub(crate) fn process_projections(
                 final_string = create_star_map(stream_name, &new_struct_name, query_object);
             }
             _ => {
-                final_string = create_simple_map(projections, stream_name, &new_struct_name, query_object);
+                final_string =
+                    create_simple_map(projections, stream_name, &new_struct_name, query_object);
             }
         }
         let stream = query_object.get_mut_stream(stream_name);
@@ -68,12 +69,17 @@ pub(crate) fn process_projections(
         if !(query_object.get_stream(stream_name).agg_position.is_empty()) {
             //1. there is a group with a condition with aggregates ->
             //we have already performed a .fold(), we only have to access aggregates
-            final_string =
-                create_aggregate_map_from_previous(projections, stream_name, &new_struct_name, query_object);
+            final_string = create_aggregate_map_from_previous(
+                projections,
+                stream_name,
+                &new_struct_name,
+                query_object,
+            );
         } else {
             //2. there is a group with a condition without aggregates || there is no group ->
             //we have to perform a .fold() and access the aggregates
-            final_string = create_aggregate_map(projections, stream_name, &new_struct_name, query_object);
+            final_string =
+                create_aggregate_map(projections, stream_name, &new_struct_name, query_object);
         }
     } else {
         final_string = create_simple_map(projections, stream_name, &new_struct_name, query_object);

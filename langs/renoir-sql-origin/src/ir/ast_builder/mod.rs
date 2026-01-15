@@ -10,7 +10,6 @@ pub(crate) mod projection;
 pub(crate) mod source;
 pub(crate) mod validate;
 
-
 pub use ir_ast_structure::*;
 use pest::iterators::Pair;
 

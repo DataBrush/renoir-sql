@@ -51,9 +51,9 @@ pub fn generate_subquery_execution(
         let subquery_exec = quote! {
             // Execute subquery #subquery_id
             let #result_var = #pipeline_code.collect_all();
-            
+
             #ctx_name.execute_blocking();
-            
+
             let #data_var = #result_var.get().unwrap();
         };
 

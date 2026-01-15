@@ -4,7 +4,8 @@ use crate::{
         into_renoir::{
             r_condition::process_filter_clause, r_group::r_group_keys::process_group_by, r_join::*,
             r_sink::r_sink_main::process_projections,
-        }    },
+        },
+    },
     struct_object::object::QueryObject,
 };
 use std::sync::Arc;

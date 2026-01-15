@@ -1,5 +1,5 @@
-use crate::ir::ir_ast_structure::*;
 use crate::ir::QueryObject;
+use crate::ir::ir_ast_structure::*;
 use crate::struct_object::support_structs::JoinTree;
 use crate::struct_object::utils::*;
 
@@ -29,13 +29,23 @@ pub(crate) fn process_join(
         let mut left_stream_name = query_object
             .get_stream_from_alias(left_col.table.as_ref().unwrap())
             .unwrap_or_else(|| {
-                &query_object.streams.get(left_col.table.as_ref().unwrap()).as_ref().unwrap().id
+                &query_object
+                    .streams
+                    .get(left_col.table.as_ref().unwrap())
+                    .as_ref()
+                    .unwrap()
+                    .id
             })
             .clone();
         let mut right_stream_name = query_object
             .get_stream_from_alias(right_col.table.as_ref().unwrap())
             .unwrap_or_else(|| {
-                &query_object.streams.get(right_col.table.as_ref().unwrap()).as_ref().unwrap().id
+                &query_object
+                    .streams
+                    .get(right_col.table.as_ref().unwrap())
+                    .as_ref()
+                    .unwrap()
+                    .id
             })
             .clone();
 
@@ -101,7 +111,8 @@ pub(crate) fn process_join(
     match join_type {
         JoinType::Left => {
             let right_stream_info = query_object.get_stream(right_stream);
-            let right_stream_final_struct_names = right_stream_info.final_struct.keys().collect::<Vec<_>>();
+            let right_stream_final_struct_names =
+                right_stream_info.final_struct.keys().collect::<Vec<_>>();
 
             final_join_op.push_str(&format!(
                 ".filter_map(|x| {{ if x.1.is_none() {{
@@ -124,8 +135,10 @@ pub(crate) fn process_join(
             let right_stream_info = query_object.get_stream(right_stream);
 
             //Retireve the final struct names
-            let left_stream_final_struct_names = left_stream_info.final_struct.keys().collect::<Vec<_>>();
-            let right_stream_final_struct_names = right_stream_info.final_struct.keys().collect::<Vec<_>>();
+            let left_stream_final_struct_names =
+                left_stream_info.final_struct.keys().collect::<Vec<_>>();
+            let right_stream_final_struct_names =
+                right_stream_info.final_struct.keys().collect::<Vec<_>>();
 
             // Determine if left side is from a previous join by checking join_tree
             let left_is_join = left_stream_info.join_tree.is_some();

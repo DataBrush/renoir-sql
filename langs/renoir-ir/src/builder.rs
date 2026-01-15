@@ -642,7 +642,10 @@ mod tests {
     fn test_source_with_map() {
         let projections = vec![
             ProjectionBuilder::column(ColumnRefBuilder::column("name"), None),
-            ProjectionBuilder::column(ColumnRefBuilder::column("email"), Some("user_email".to_string())),
+            ProjectionBuilder::column(
+                ColumnRefBuilder::column("email"),
+                Some("user_email".to_string()),
+            ),
         ];
 
         let plan = IrPlanBuilder::source("users", None)
@@ -679,7 +682,11 @@ mod tests {
         ];
 
         let plan = IrPlanBuilder::source("users", None)
-            .group_by(vec![ColumnRefBuilder::column("country")], aggregations, None)
+            .group_by(
+                vec![ColumnRefBuilder::column("country")],
+                aggregations,
+                None,
+            )
             .build();
 
         assert!(matches!(plan.as_ref(), IrPlan::GroupBy { .. }));
@@ -699,9 +706,7 @@ mod tests {
 
     #[test]
     fn test_distinct() {
-        let plan = IrPlanBuilder::source("users", None)
-            .distinct()
-            .build();
+        let plan = IrPlanBuilder::source("users", None).distinct().build();
 
         assert!(matches!(plan.as_ref(), IrPlan::Distinct { .. }));
     }
@@ -722,7 +727,9 @@ mod tests {
 
         let combined_filter = FilterBuilder::and(age_filter, status_filter);
 
-        let plan = IrPlanBuilder::source("users", None).filter(combined_filter).build();
+        let plan = IrPlanBuilder::source("users", None)
+            .filter(combined_filter)
+            .build();
 
         assert!(matches!(plan.as_ref(), IrPlan::Filter { .. }));
     }
@@ -750,12 +757,10 @@ mod tests {
 
         let sink = SinkDefBuilder::new(
             "filtered_sales",
-            vec![
-                FieldDef {
-                    name: "product_id".to_string(),
-                    data_type: DataType::BigInt,
-                },
-            ],
+            vec![FieldDef {
+                name: "product_id".to_string(),
+                data_type: DataType::BigInt,
+            }],
             "csv",
             vec![],
         );
@@ -768,11 +773,7 @@ mod tests {
             ))
             .build();
 
-        let pipeline = PipelineBuilder::new(
-            "filtered_sales",
-            vec!["product_id".to_string()],
-            plan,
-        );
+        let pipeline = PipelineBuilder::new("filtered_sales", vec!["product_id".to_string()], plan);
 
         let program = ProgramBuilder::new()
             .add_source(source)

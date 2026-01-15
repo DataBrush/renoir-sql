@@ -6,10 +6,7 @@ use renoir_ir::{DataType, FieldDef, OptionValue, SinkDef};
 /// Note: In Renoir, sinks are terminal operations, not separate objects
 /// This function generates struct definitions for sink types
 pub fn generate_sinks(sinks: &[SinkDef]) -> TokenStream {
-    let sink_structs: Vec<TokenStream> = sinks
-        .iter()
-        .map(generate_sink_struct)
-        .collect();
+    let sink_structs: Vec<TokenStream> = sinks.iter().map(generate_sink_struct).collect();
 
     quote! {
         #(#sink_structs)*
@@ -19,14 +16,18 @@ pub fn generate_sinks(sinks: &[SinkDef]) -> TokenStream {
 /// Generate a struct definition for a sink
 fn generate_sink_struct(sink: &SinkDef) -> TokenStream {
     let struct_name = format_ident!("{}", capitalize(&sink.name));
-    
-    let fields: Vec<TokenStream> = sink.schema.iter().map(|field| {
-        let field_name = format_ident!("{}", field.name);
-        let field_type = rust_type(&field.data_type);
-        quote! {
-            pub #field_name: #field_type
-        }
-    }).collect();
+
+    let fields: Vec<TokenStream> = sink
+        .schema
+        .iter()
+        .map(|field| {
+            let field_name = format_ident!("{}", field.name);
+            let field_type = rust_type(&field.data_type);
+            quote! {
+                pub #field_name: #field_type
+            }
+        })
+        .collect();
 
     quote! {
         #[derive(Debug, Clone, Serialize)]
@@ -38,10 +39,7 @@ fn generate_sink_struct(sink: &SinkDef) -> TokenStream {
 
 /// Generate sink terminal operation code
 /// This is called from pipeline generation to add the sink operation
-pub fn generate_sink_operation(
-    sink: &SinkDef,
-    pipeline_expr: TokenStream,
-) -> TokenStream {
+pub fn generate_sink_operation(sink: &SinkDef, pipeline_expr: TokenStream) -> TokenStream {
     match sink.connector.connector_type.as_str() {
         "csv" => generate_csv_sink(sink, pipeline_expr),
         "kafka" => generate_kafka_sink(sink, pipeline_expr),
@@ -68,8 +66,8 @@ fn generate_csv_sink(sink: &SinkDef, pipeline_expr: TokenStream) -> TokenStream 
 fn generate_kafka_sink(sink: &SinkDef, pipeline_expr: TokenStream) -> TokenStream {
     let brokers = get_option_value(&sink.connector.options, "brokers")
         .unwrap_or_else(|| "localhost:9092".to_string());
-    let topic = get_option_value(&sink.connector.options, "topic")
-        .unwrap_or_else(|| "output".to_string());
+    let topic =
+        get_option_value(&sink.connector.options, "topic").unwrap_or_else(|| "output".to_string());
 
     quote! {
         {

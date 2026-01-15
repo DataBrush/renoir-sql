@@ -55,7 +55,8 @@ pub(crate) fn process_aggregate(
     } else {
         // This is a GROUP BY with aggregates
         // Parse the grouping expressions using expr ID resolution
-        let (group_keys, grouping_updates) = parse_grouping_expressions(grouping_expressions, conv_object)?;
+        let (group_keys, grouping_updates) =
+            parse_grouping_expressions(grouping_expressions, conv_object)?;
 
         // Apply grouping expression updates to maintain expr ID mappings
         // Note: GROUP BY columns typically keep their original names and sources
@@ -95,13 +96,13 @@ fn parse_grouping_expressions(
         if let Some(group_expression_array) = group_expression.as_array() {
             for group_expression_item in group_expression_array {
                 // Process each grouping column using expr ID resolution
-                let (expr_id, column_name, source_name) = 
-                    conv_object.resolve_projection_column(group_expression_item)
-                        .map_err(|_| {
-                            Box::new(ConversionError::InvalidGroupKeys(
-                                "Failed to resolve grouping column expression ID".to_string(),
-                            ))
-                        })?;
+                let (expr_id, column_name, source_name) = conv_object
+                    .resolve_projection_column(group_expression_item)
+                    .map_err(|_| {
+                        Box::new(ConversionError::InvalidGroupKeys(
+                            "Failed to resolve grouping column expression ID".to_string(),
+                        ))
+                    })?;
 
                 // Create column reference with resolved information
                 let column_ref = ColumnRef {

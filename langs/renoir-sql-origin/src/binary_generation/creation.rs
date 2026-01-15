@@ -9,8 +9,10 @@ pub struct RustProject {
 impl RustProject {
     /// Creates a new Rust project with the specified path.
     /// If the project already exists, it does nothing.
-    pub(crate) fn create_empty_project(path: &String, renoir_path: &Option<String>) -> io::Result<RustProject> {
-
+    pub(crate) fn create_empty_project(
+        path: &String,
+        renoir_path: &Option<String>,
+    ) -> io::Result<RustProject> {
         // Check if the provided renoir_path is valid. If not, use the default path from the parent directory.
         let renoir = if let Some(renoir_path_str) = renoir_path {
             renoir_path_str.clone()

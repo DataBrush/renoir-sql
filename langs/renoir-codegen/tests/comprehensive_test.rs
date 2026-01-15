@@ -4,8 +4,8 @@ use renoir_codegen::generate_program_with_context;
 use renoir_ir::{
     AggregateFunction, AggregateType, ColumnRef, ComparisonOp, ComplexField, Condition,
     ConnectorConfig, ConnectorOption, DataType, FieldDef, FilterClause, FilterConditionType,
-    InCondition, IrPlan, JoinCondition, JoinType, NullCondition, NullOp, OrderByItem,
-    OrderDirection, OptionValue, Pipeline, Program, ProjectionColumn, SinkDef, SourceDef,
+    InCondition, IrPlan, JoinCondition, JoinType, NullCondition, NullOp, OptionValue, OrderByItem,
+    OrderDirection, Pipeline, Program, ProjectionColumn, SinkDef, SourceDef,
 };
 use std::sync::Arc;
 
@@ -405,7 +405,7 @@ fn test_subquery_with_join() {
 
 #[test]
 fn test_multiple_aggregates() {
-    // SELECT user_id, 
+    // SELECT user_id,
     //        COUNT(*) as cnt,
     //        SUM(amount) as total,
     //        AVG(amount) as avg_amt,
