@@ -1,0 +1,19 @@
+[package]
+name = "renoir-codegen-legacy"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+syn = "2.0"
+quote = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+proc-macro2 = "1.0"
+
+[dev-dependencies]
+renoir = { version = "0.5.0", features = ["rdkafka"] }
+rdkafka = "0.37.0"
+tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros"] }
+
+[lib]
+proc-macro = true

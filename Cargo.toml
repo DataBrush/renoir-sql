@@ -1,8 +1,11 @@
 [workspace]
 resolver = "3"
-members = ["langs/renoir-ir",
+members = [
+    "langs/renoir-codegen",
+    "langs/renoir-codegen-legacy",
+    "langs/renoir-dsl",
+    "langs/renoir-ir",
     "langs/renoir-sql",
     "langs/renoir-sql-origin",
-    "langs/renoir-codegen",
-    "tests/sql-macro-test", "langs/renoir-dsl",
+    "tests/sql-macro-test",
 ]
