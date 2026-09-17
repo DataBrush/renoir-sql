@@ -1,4 +1,4 @@
-use renoir::{StreamContext, prelude::CsvSource};
+use renoir::prelude::*;
 use renoir_sql::sql;
 
 fn main() {

@@ -47,7 +47,7 @@ pub fn generate_imports(connector_types: &HashSet<String>) -> TokenStream {
     // Add Kafka imports if needed
     if has_kafka {
         imports.push(quote! {
-            use rdkafka::ClientConfig;
+            use renoir::kafka::{Message, KafkaSourceExt, KafkaSinkExt, ClientConfig};
         });
     }
 

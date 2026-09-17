@@ -51,7 +51,7 @@ impl ConnectorRegistry {
             "kafka".to_string(),
             ConnectorMeta {
                 name: "kafka".to_string(),
-                imports: vec!["rdkafka::ClientConfig"],
+                imports: vec!["renoir::kafka::{Message, KafkaSourceExt, KafkaSinkExt, ClientConfig}"],
                 requires_serde: true,
             },
         );

@@ -193,21 +193,37 @@ fn generate_kafka_source(
         .unwrap_or_else(|| "events".to_string());
     let group_id = get_option_value(&source.connector.options, "group_id")
         .unwrap_or_else(|| "consumer_group".to_string());
+    let encoding = get_option_value(&source.connector.options, "encoding")
+        .unwrap_or_else(|| "json".to_string());
+
+    let struct_decoder = match encoding.as_str() {
+        "json" => quote! { 
+            |m| {
+                m.payload()
+                    .and_then(|p| serde_json::from_slice::<#struct_name>(p).ok()) // Handle deserialization error as needed
+            }
+        },
+        "bincode" => {
+            quote! { todo!("bincode deserialization for kafka source not implemented yes") }
+        }
+        _ => quote! { compile_error!("Unsupported encoding kafka source encoding: {}", encoding) },
+    };
 
     quote! {
-        let mut consumer_config = ClientConfig::new();
+        let mut consumer_config = renoir::kafka::ClientConfig::new();
         consumer_config
             .set("group.id", #group_id)
             .set("bootstrap.servers", #brokers)
             .set("enable.partition.eof", "false")
             .set("session.timeout.ms", "6000")
-            .set("enable.auto.commit", "true");
+            .set("enable.auto.commit", "true")
+            .set_log_level(renoir::kafka::KafkaLogLevel::Debug);
 
-        let #var_name = #ctx_name.stream_kafka::<#struct_name>(
+        let #var_name = #ctx_name.stream_kafka(
             consumer_config,
             &[#topic],
-            renoir::operator::source::kafka::Replication::Unlimited
-        );
+            renoir::prelude::Replication::Unlimited
+        ).filter_map(#struct_decoder);
     }
 }
 
